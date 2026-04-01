@@ -1,0 +1,154 @@
+version: '3'
+
+vars:
+  APP_BINARY: backend.exe
+  DOCKER_IMAGE: udmurtia-backend:local
+  BACKEND_DIR: backend
+  DB_TEST_NAME: udmurtia_trip_test
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  # === Dependencies ===
+  deps:
+    desc: Download go dependencies
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go mod download
+
+  # === Build ===
+  build:
+    desc: Build local windows binary
+    dir: "{{.BACKEND_DIR}}"
+    deps:
+      - deps
+    cmds:
+      - go build -o ../{{.APP_BINARY}} ./cmd/main.go
+
+  # === Docker ===
+  up:
+    desc: Start all services in docker compose
+    cmds:
+      - docker compose up --build -d
+    deps:
+      - build
+
+  down:
+    desc: Stop docker compose
+    cmds:
+      - docker compose down
+
+  restart:
+    desc: Restart docker compose
+    cmds:
+      - task: down
+      - task: up
+
+  logs:
+    desc: Tail docker compose logs
+    cmds:
+      - docker compose logs -f
+
+  logs-db:
+    desc: Tail postgres logs
+    cmds:
+      - docker compose logs -f postgres
+
+  logs-app:
+    desc: Tail backend logs
+    cmds:
+      - docker compose logs -f backend
+
+  # === Database ===
+  db-up:
+    desc: Start only PostgreSQL
+    cmds:
+      - docker compose up -d postgres
+
+  db-down:
+    desc: Stop PostgreSQL
+    cmds:
+      - docker compose stop postgres
+
+  db-migrate:
+    desc: Run migrations (up)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go run cmd/main.go
+
+  db-reset:
+    desc: Reset database (drop + migrate)
+    cmds:
+      - task: down
+      - sh -c "docker volume rm t2_postgres_data 2>/dev/null || true"
+      - task: up
+
+  # === Test ===
+  test:
+    desc: Run go tests
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go test ./...
+
+  test-cover:
+    desc: Run tests with coverage
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go test -v -cover ./...
+
+  test-repo:
+    desc: Run repository tests (requires test database)
+    dir: "{{.BACKEND_DIR}}"
+    env:
+      DB_NAME: "{{.DB_TEST_NAME}}"
+    cmds:
+      - go test -v ./internal/repository/...
+
+  test-db-up:
+    desc: Create test database
+    cmds:
+      - docker compose up -d postgres
+      - sleep 3
+      - sh -c "docker exec -it udmurtia_postgres psql -U postgres -c \"CREATE DATABASE {{.DB_TEST_NAME}};\" || true"
+
+  # === Lint & Format ===
+  fmt:
+    desc: Format Go code
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Run golangci-lint locally
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - golangci-lint run
+
+  lint-fix:
+    desc: Auto-fix lint issues
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - golangci-lint run --fix
+
+  check:
+    desc: "Full check: fmt + lint + test"
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: test
+
+  # === Clean ===
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -f {{.APP_BINARY}}
+
+  # === Dev ===
+  dev:
+    desc: Run in dev mode with hot reload (requires air)
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - air

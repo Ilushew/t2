@@ -10,6 +10,8 @@ vendor/
 go.work
 go.work.sum
 
+# Environment
+.env
 
 # IDE
 .idea/
