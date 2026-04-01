@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ilushew/udmurtia-trip/backend/internal/handlers"
 	"github.com/ilushew/udmurtia-trip/backend/internal/migrations"
+	"github.com/ilushew/udmurtia-trip/backend/internal/repository"
+	"github.com/ilushew/udmurtia-trip/backend/internal/services"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/migrator"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/postgres"
 )
@@ -41,12 +43,31 @@ func main() {
 	}
 	log.Println("Migrations applied successfully")
 
+	// Инициализация email сервиса
+	emailCfg := services.EmailConfig{
+		Host:     os.Getenv("EMAIL_HOST"),
+		Port:     465,
+		Username: os.Getenv("EMAIL_USERNAME"),
+		Password: os.Getenv("EMAIL_PASSWORD"),
+		From:     os.Getenv("EMAIL_FROM"),
+	}
+	emailSvc, err := services.NewEmailService(emailCfg)
+	if err != nil {
+		log.Fatalf("Failed to create email service: %v", err)
+	}
+	defer emailSvc.Close()
+
+	userRepo := repository.NewUserRepository(pool)
+	authHandler := handlers.NewAuthHandler(userRepo, emailSvc)
 	r := gin.Default()
 	// загрузка шаблонов
 	r.LoadHTMLFiles(
 		"templates/base.html",
 		"templates/index.html",
 		"templates/partials/route-result.html",
+		"templates/partials/verify-code-form.html",
+		"templates/partials/auth-error.html",
+		"templates/auth/register.html",
 	)
 	r.Static("/static", "static")
 
@@ -57,5 +78,11 @@ func main() {
 		})
 	})
 	r.POST("/generate", tripHandler.GenerateTrip)
+	auth := r.Group("/auth")
+	{
+		auth.GET("/register", authHandler.ShowRegisterPage)
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/verify", authHandler.VerifyCode)
+	}
 	r.Run(":8080")
 }

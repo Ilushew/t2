@@ -9,6 +9,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/ilushew/udmurtia-trip/backend/internal/models"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -96,6 +97,10 @@ func (r *UserRepository) CreateUser(ctx context.Context, email, passwordHash str
 		&user.UpdatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, ErrUserAlreadyExists
+		}
 		return nil, err
 	}
 
@@ -138,6 +143,29 @@ func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 	return user, nil
 }
 
+func (r *UserRepository) VerifyCode(ctx context.Context, id uuid.UUID, code string) error {
+	query, args, err := r.psq.
+		Select("COUNT(1)").
+		From("users").
+		Where(squirrel.And{
+			squirrel.Eq{"id": id},
+			squirrel.Eq{"email_verification_code": code},
+			squirrel.GtOrEq{"email_verification_expires_at": time.Now()},
+		}).ToSql()
+	if err != nil {
+		return err
+	}
+	var count int
+	err = r.pool.QueryRow(ctx, query, args...).Scan(&count)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrInvalidCode
+	}
+	return nil
+}
+
 // UpdateVerificationStatus обновляет статус верификации email
 func (r *UserRepository) UpdateVerificationStatus(ctx context.Context, id uuid.UUID, isVerified bool) error {
 	query, args, err := r.psq.
@@ -162,22 +190,6 @@ func (r *UserRepository) SetVerificationCode(ctx context.Context, id uuid.UUID, 
 		Update("users").
 		Set("email_verification_code", code).
 		Set("email_verification_expires_at", expiresAt).
-		Set("updated_at", time.Now()).
-		Where(squirrel.Eq{"id": id}).
-		ToSql()
-	if err != nil {
-		return err
-	}
-
-	_, err = r.pool.Exec(ctx, query, args...)
-	return err
-}
-
-// UpdatePassword обновляет хэш пароля
-func (r *UserRepository) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
-	query, args, err := r.psq.
-		Update("users").
-		Set("password_hash", passwordHash).
 		Set("updated_at", time.Now()).
 		Where(squirrel.Eq{"id": id}).
 		ToSql()

@@ -1,0 +1,24 @@
+<div class="space-y-4">
+    <p class="text-sm text-gray-600">Код отправлен на <strong>{{.email}}</strong></p>
+    
+    <form hx-post="/auth/verify" 
+          hx-target="#auth-form" 
+          hx-swap="innerHTML">
+        <input type="hidden" name="email" value="{{.email}}">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Код из письма</label>
+            <input type="text" 
+                   name="code" 
+                   placeholder="123456" 
+                   maxlength="6"
+                   required
+                   class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md text-center text-2xl tracking-widest">
+        </div>
+        <button type="submit" 
+                class="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition">
+            Войти
+        </button>
+    </form>
+    
+    <div id="auth-form"></div>
+</div>
