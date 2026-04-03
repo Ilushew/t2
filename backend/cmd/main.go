@@ -16,6 +16,7 @@ import (
 	"github.com/ilushew/udmurtia-trip/backend/internal/services"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/migrator"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/postgres"
+	redisPkg "github.com/ilushew/udmurtia-trip/backend/pkg/redis"
 )
 
 func createMyRender() multitemplate.Renderer {
@@ -70,8 +71,16 @@ func main() {
 	}
 	defer emailSvc.Close()
 
+	redisAddr := "redis:6379"
+	redisClient := redisPkg.NewClient(redisAddr)
+
+	err = redisPkg.Ping(ctx, redisClient)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+	codeService := services.NewCodeService(redisClient)
 	userRepo := repository.NewUserRepository(pool)
-	authHandler := handlers.NewAuthHandler(userRepo, emailSvc)
+	authHandler := handlers.NewAuthHandler(userRepo, emailSvc, codeService)
 	r := gin.Default()
 
 	// Инициализация сессий

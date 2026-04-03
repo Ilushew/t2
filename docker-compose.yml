@@ -61,10 +61,25 @@ services:
       - backend
     networks:
       - app-network
-
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    
 networks:
   app-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  redis_data:
