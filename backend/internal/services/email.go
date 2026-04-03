@@ -40,7 +40,7 @@ func NewEmailService(cfg EmailConfig) (*EmailService, error) {
 }
 
 func (s *EmailService) SendVerificationCode(to, code string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	m := mail.NewMsg()

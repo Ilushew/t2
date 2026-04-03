@@ -23,14 +23,9 @@ func (h *TripHandler) GenerateTrip(c *gin.Context) {
 	pref := c.PostForm("trip_type")
 
 	// 2. Вызываем заглушку
-	places, _, err := h.mlService.GetRecommendations(pref)
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "partials/error.html", gin.H{"msg": "Ошибка генерации"})
-		return
-	}
-
+	places, _, _ := h.mlService.GetRecommendations(pref)
 	// 3. Отдаем HTML-фрагмент с результатами
-	c.HTML(http.StatusOK, "route-result.html", gin.H{
+	c.HTML(http.StatusOK, "generate", gin.H{
 		"places": places,
 	})
 }
