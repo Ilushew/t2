@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/wneessen/go-mail"
@@ -15,16 +16,20 @@ type EmailService struct {
 
 type EmailConfig struct {
 	Host     string
-	Port     int
+	Port     string
 	Username string
 	Password string
 	From     string
 }
 
 func NewEmailService(cfg EmailConfig) (*EmailService, error) {
+	port, err := strconv.Atoi(cfg.Port)
+	if err != nil{
+		return nil, fmt.Errorf("")
+	}
 	client, err := mail.NewClient(
 		cfg.Host,
-		mail.WithPort(cfg.Port),
+		mail.WithPort(port),
 		mail.WithSMTPAuth(mail.SMTPAuthPlain),
 		mail.WithUsername(cfg.Username),
 		mail.WithPassword(cfg.Password),
@@ -50,7 +55,7 @@ func (s *EmailService) SendVerificationCode(to, code string) error {
 
 	m.SetBodyString(mail.TypeTextHTML, getVerificationEmailHTML(code))
 
-	if err := s.client.DialAndSendWithContext(ctx, m); err != nil{
+	if err := s.client.DialAndSendWithContext(ctx, m); err != nil {
 		return fmt.Errorf("fail to send email: %w", err)
 	}
 	return nil

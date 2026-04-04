@@ -10,7 +10,7 @@ import (
 func MustGet(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
-		panic(fmt.Sprintf("config.MustGet: %s reqiuired variable is not set", val))
+		panic(fmt.Sprintf("config.MustGet: %s reqiuired variable is not set", key))
 	}
 
 	return val
@@ -35,7 +35,7 @@ func LoadDotEnv(path string) error {
 	}
 
 	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line) //APP_ADDR=8080
+		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
@@ -53,6 +53,5 @@ func LoadDotEnv(path string) error {
 			}
 		}
 	}
-
 	return nil
 }

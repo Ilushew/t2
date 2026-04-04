@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/sessions"
@@ -14,36 +14,47 @@ import (
 	"github.com/ilushew/udmurtia-trip/backend/internal/migrations"
 	"github.com/ilushew/udmurtia-trip/backend/internal/repository"
 	"github.com/ilushew/udmurtia-trip/backend/internal/services"
+	"github.com/ilushew/udmurtia-trip/backend/pkg/config"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/migrator"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/postgres"
 	redisPkg "github.com/ilushew/udmurtia-trip/backend/pkg/redis"
 )
 
+// загружаем шаблоны страниц
 func createMyRender() multitemplate.Renderer {
 	r := multitemplate.NewRenderer()
+	// загрузка цельных страниц
 	r.AddFromFiles("index", "templates/base.html", "templates/index.html")
 	r.AddFromFiles("register", "templates/base.html", "templates/auth/register.html")
+
+	// загрузка частей страниц
 	r.AddFromFiles("verify", "templates/partials/verify-code-form.html")
 	r.AddFromFiles("auth-error", "templates/partials/auth-error.html")
 	r.AddFromFiles("generate", "templates/partials/route-result.html")
+	
 	return r
 }
 
 func main() {
+	// загружаем файл конфигураций
+	if err := config.LoadDotEnv(".env"); err != nil {
+		fmt.Printf("loadDotEnv error: %v", err)
+	}
+
+	// подключаем постгрес
 	ctx := context.Background()
 	cfg := postgres.Config{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		Database: os.Getenv("DB_NAME"),
+		Host:     config.Get("DB_HOST", "localhost"),
+		Port:     config.Get("DB_PORT", "5432"),
+		User:     config.Get("DB_USER", "postgres"),
+		Password: config.Get("DB_PASSWORD", "postgres"),
+		Database: config.Get("DB_NAME", "udmurtia-trip"),
 	}
 	pool, err := postgres.NewPool(ctx, cfg)
 	if err != nil {
 		log.Fatalf("Failed to create pool: %v", err)
 	}
 	defer pool.Close()
-
 	stdDB := postgres.NewStdDB(pool)
 
 	// Создаём и запускаем мигратор
@@ -51,19 +62,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create migrator: %v", err)
 	}
-
 	if err := migr.Up(); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 	log.Println("Migrations applied successfully")
 
-	// Инициализация email сервиса
+	// инициализация email сервиса
 	emailCfg := services.EmailConfig{
-		Host:     os.Getenv("EMAIL_HOST"),
-		Port:     465,
-		Username: os.Getenv("EMAIL_USERNAME"),
-		Password: os.Getenv("EMAIL_PASSWORD"),
-		From:     os.Getenv("EMAIL_FROM"),
+		Host:     config.MustGet("EMAIL_HOST"),
+		Port:     config.MustGet("EMAIL_PORT"),
+		Username: config.MustGet("EMAIL_USERNAME"),
+		Password: config.MustGet("EMAIL_PASSWORD"),
+		From:     config.MustGet("EMAIL_FROM"),
 	}
 	emailSvc, err := services.NewEmailService(emailCfg)
 	if err != nil {
@@ -71,7 +81,8 @@ func main() {
 	}
 	defer emailSvc.Close()
 
-	redisAddr := "redis:6379"
+	// инициализируем Redis
+	redisAddr := config.Get("REDIS_ADDR", "redis:6379")
 	redisClient := redisPkg.NewClient(redisAddr)
 
 	err = redisPkg.Ping(ctx, redisClient)
@@ -79,14 +90,16 @@ func main() {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 	codeService := services.NewCodeService(redisClient)
+
+	// создаем репозиторий для работы с пользователями
 	userRepo := repository.NewUserRepository(pool)
-	authHandler := handlers.NewAuthHandler(userRepo, emailSvc, codeService)
+
+	// создаем роутер
 	r := gin.Default()
 
-	// Инициализация сессий
-	secret := "your-super-secret-key-min-32-characters-long"
+	// инициализация сессий
+	secret := config.MustGet("SESSION_SECRET")
 	if secret == "" {
-		// Для разработки: сгенерируйте ключ один раз и сохраните в .env
 		log.Fatal("SESSION_SECRET environment variable is required")
 	}
 
@@ -99,18 +112,21 @@ func main() {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	// 👇 Регистрируем middleware (ОБЯЗАТЕЛЬНО до маршрутов!)
+	// регистрируем middleware
 	r.Use(sessions.Sessions("udmurtia_trip", store))
 
 	// загрузка шаблонов
 	r.HTMLRender = createMyRender()
 
+	// загрузка статики
 	r.Static("/static", "static")
 
+	// инициализация маршрутов
+	indexHandler := handlers.NewIndexHandler()
 	tripHandler := handlers.NewTripHandler()
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index", gin.H{"title": "Home"})
-	})
+	authHandler := handlers.NewAuthHandler(userRepo, emailSvc, codeService)
+
+	r.GET("/", indexHandler.ShowIndexPage)
 	r.POST("/generate", tripHandler.GenerateTrip)
 	auth := r.Group("/auth")
 	{

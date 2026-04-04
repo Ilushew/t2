@@ -27,6 +27,8 @@ services:
       dockerfile: Dockerfile
     container_name: udmurtia_backend
     restart: always
+    env_file:
+      - .env
     environment:
       - GIN_MODE=release
       - DB_HOST=postgres
@@ -39,6 +41,8 @@ services:
       - EMAIL_USERNAME=${EMAIL_USERNAME}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
       - EMAIL_FROM=${EMAIL_FROM}
+      - REDIS_ADDR=${REDIS_ADDR:-redis:6379}
+      - SESSION_SECRET=${SESSION_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
