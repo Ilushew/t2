@@ -93,6 +93,12 @@ func (h *AuthHandler) VerifyCode(c *gin.Context) {
 		return
 	}
 
+	err = h.userRepo.MarkVerified(ctx, user.ID)
+	if err != nil {
+		c.HTML(http.StatusOK, errorTemplatePath, gin.H{"message": "Ошибка обновления статуса"})
+		return
+	}
+
 	session := sessions.Default(c)
 	session.Set("user_id", user.ID.String())
 	session.Set("email", user.Email)

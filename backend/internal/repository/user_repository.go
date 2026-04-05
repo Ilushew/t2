@@ -114,3 +114,17 @@ func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 
 	return user, nil
 }
+
+func (r *UserRepository) MarkVerified(ctx context.Context, id uuid.UUID) error {
+	query, args, err := r.psq.
+		Update("users").
+		Set("is_verified", true).
+		Where(squirrel.Eq{"id": id}).
+		ToSql()
+	if err != nil {
+		return err
+	}
+
+	_, err = r.pool.Exec(ctx, query, args...)
+	return err
+}
