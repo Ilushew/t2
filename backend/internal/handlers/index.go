@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,5 +15,17 @@ func NewIndexHandler() *IndexHandler {
 }
 
 func (h *IndexHandler) ShowIndexPage(c *gin.Context) {
-	c.HTML(http.StatusOK,"index", gin.H{"title": "Home"} )
+	session := sessions.Default(c)
+	userID := session.Get("user_id")
+
+	data := gin.H{
+		"Title":            "Home",
+		"IsAuthenticated":  userID != nil,
+	}
+
+	if userID != nil {
+		data["Email"] = session.Get("email")
+	}
+
+	c.HTML(http.StatusOK, "index", data)
 }

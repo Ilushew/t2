@@ -61,5 +61,6 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 		auth.GET("/register", authHandler.ShowRegisterPage)
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/verify", authHandler.VerifyCode)
+		auth.GET("/logout", authHandler.Logout)
 	}
 }

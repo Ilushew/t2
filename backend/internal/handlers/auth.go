@@ -109,7 +109,5 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	session.Save()
-
-	c.Header("HX-Redirect", "/")
-	c.Status(http.StatusNoContent)
+	c.Redirect(http.StatusFound, "/")
 }
