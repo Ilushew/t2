@@ -2,13 +2,21 @@ package redis
 
 import (
 	"context"
+	"log"
+	"strconv"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func NewClient(addr string) *redis.Client {
+func NewClient(addr, password, DB string) *redis.Client {
+	db, err := strconv.Atoi(DB)
+	if err != nil {
+		log.Printf("NewCLient.db error: %v", err)
+	}
 	return redis.NewClient(&redis.Options{
-		Addr: addr,
+		Addr:     addr,
+		Password: password,
+		DB:       db,
 	})
 }
 

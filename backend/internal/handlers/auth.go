@@ -3,7 +3,8 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"math/rand/v2"
+	"math/big"
+	"crypto/rand"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -28,6 +29,14 @@ func NewAuthHandler(userRepo *repository.UserRepository, emailSvc *services.Emai
 	}
 }
 
+func generateCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(900000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n.Int64()+100000), nil
+}
+
 func (h *AuthHandler) ShowRegisterPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "register", nil)
 }
@@ -48,7 +57,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			return
 		}
 	}
-	code := fmt.Sprintf("%06d", rand.IntN(1000000))
+	code, err := generateCode()
+	if err != nil {
+		log.Fatalf("Generate code error: %v", err)
+	}
 
 	err = h.codeSvc.SetCode(ctx, user.ID.String(), code)
 	if err != nil {
