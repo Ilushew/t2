@@ -41,6 +41,7 @@ func scanUser(row rowScanner) (*models.User, error) {
 		&user.ID,
 		&user.Email,
 		&user.IsVerified,
+		&user.IsAdmin,
 	)
 	if err != nil {
 		return nil, err
@@ -56,7 +57,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, email string) (*models.
 		Insert("users").
 		Columns("id", "email", "is_verified").
 		Values(id, email, false).
-		Suffix("RETURNING id, email, is_verified").
+		Suffix("RETURNING id, email, is_verified, is_admin").
 		ToSql()
 	if err != nil {
 		return nil, err
@@ -67,6 +68,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, email string) (*models.
 		&user.ID,
 		&user.Email,
 		&user.IsVerified,
+		&user.IsAdmin,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -81,7 +83,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, email string) (*models.
 
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	query, args, err := r.psq.
-		Select("id", "email", "is_verified").
+		Select("id", "email", "is_verified", "is_admin").
 		From("users").
 		Where(squirrel.Eq{"email": email}).
 		ToSql()
@@ -99,7 +101,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 
 func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query, args, err := r.psq.
-		Select("id", "email", "is_verified").
+		Select("id", "email", "is_verified", "is_admin").
 		From("users").
 		Where(squirrel.Eq{"id": id}).
 		ToSql()
@@ -128,3 +130,4 @@ func (r *UserRepository) MarkVerified(ctx context.Context, id uuid.UUID) error {
 	_, err = r.pool.Exec(ctx, query, args...)
 	return err
 }
+

@@ -7,12 +7,15 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/ilushew/udmurtia-trip/backend/internal/handlers"
+	"github.com/ilushew/udmurtia-trip/backend/internal/middleware"
 	"github.com/ilushew/udmurtia-trip/backend/internal/repository"
 	"github.com/ilushew/udmurtia-trip/backend/internal/services"
 	"github.com/ilushew/udmurtia-trip/backend/pkg/config"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Deps struct {
+	Pool        *pgxpool.Pool
 	UserRepo    *repository.UserRepository
 	EmailSvc    *services.EmailService
 	CodeService *services.CodeService
@@ -52,6 +55,17 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 		deps.EmailSvc,
 		deps.CodeService,
 	)
+	adminHandler := handlers.NewAdminHandler(deps.UserRepo)
+	adminGroup := r.Group("/admin", middleware.RequireAdmin(deps.UserRepo))
+	{
+		adminGroup.GET("/", adminHandler.ShowTables)
+		adminGroup.GET("/table/:table", adminHandler.ViewTable)
+		adminGroup.GET("/table/:table/create", adminHandler.CreateUserGet)
+		adminGroup.POST("/table/:table/create", adminHandler.CreateUserPost)
+		adminGroup.GET("/table/:table/edit/:id", adminHandler.EditRowGet)
+		adminGroup.POST("/table/:table/edit/:id", adminHandler.EditRowPost)
+		adminGroup.POST("/table/:table/delete/:id", adminHandler.DeleteRow)
+	}
 
 	r.GET("/", indexHandler.ShowIndexPage)
 	r.POST("/generate", tripHandler.GenerateTrip)

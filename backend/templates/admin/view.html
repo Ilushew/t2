@@ -1,0 +1,86 @@
+{{template "base.html" .}}
+
+{{define "content"}}
+<div class="container mx-auto p-4 max-w-6xl">
+    <h1 class="text-2xl font-bold mb-4">{{.Title}}</h1>
+
+    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <a href="/admin" class="text-blue-600 hover:underline">← Назад к таблицам</a>
+        <a href="/admin/table/{{.TableName}}/create"
+           class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition text-sm">
+            + Добавить пользователя
+        </a>
+    </div>
+
+    <!-- Таблица (десктоп) — скрываем на мобилке -->
+    <div class="hidden sm:block overflow-x-auto bg-white rounded-lg shadow">
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-gray-100">
+                    {{range .Columns}}
+                    <th class="border p-2 text-left text-sm font-semibold">{{.Name}}</th>
+                    {{end}}
+                    <th class="border p-2 text-center text-sm font-semibold">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range $idx, $row := .Rows}}
+                <tr>
+                    {{range $j, $col := $.Columns}}
+                    <td class="border p-2 text-sm">{{index $row $j}}</td>
+                    {{end}}
+                    <td class="border p-2 text-center">
+                        <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}"
+                           class="text-blue-600 hover:underline text-sm mr-2">
+                            Редактировать
+                        </a>
+                        <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Удалить запись?')">
+                            <button type="submit"
+                                    class="text-red-600 hover:underline text-sm">
+                                Удалить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td class="border p-4 text-center text-gray-400" colspan="99">Нет записей</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Карточки (мобилка) — скрываем на десктопе -->
+    <div class="sm:hidden space-y-3">
+        {{range $idx, $row := .Rows}}
+        <div class="bg-white rounded-lg shadow p-4 border">
+            {{range $j, $col := $.Columns}}
+            <div class="mb-2">
+                <span class="font-semibold text-sm text-gray-500">{{$col.Name}}:</span>
+                <span class="text-sm ml-1">{{index $row $j}}</span>
+            </div>
+            {{end}}
+            <div class="flex gap-3 mt-3 pt-3 border-t">
+                <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}"
+                   class="text-blue-600 hover:underline text-sm py-2 px-4 flex-1 text-center border border-blue-600 rounded">
+                    Редактировать
+                </a>
+                <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}"
+                      class="flex-1"
+                      onsubmit="return confirm('Удалить запись?')">
+                    <button type="submit"
+                            class="text-red-600 hover:underline text-sm py-2 px-4 w-full border border-red-600 rounded">
+                        Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+        {{else}}
+        <p class="text-center text-gray-400 py-8">Нет записей</p>
+        {{end}}
+    </div>
+</div>
+{{end}}

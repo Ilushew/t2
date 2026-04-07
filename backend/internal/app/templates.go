@@ -22,5 +22,11 @@ func createRender() multitemplate.Renderer {
 	r.AddFromFiles("auth-error", "templates/partials/auth-error.html")
 	r.AddFromFiles("generate", "templates/partials/route-result.html")
 
+	// админка
+	r.AddFromFiles("admin-tables", "templates/base.html", "templates/admin/tables.html")
+	r.AddFromFiles("admin-view", "templates/base.html", "templates/admin/view.html")
+	r.AddFromFiles("admin-edit", "templates/base.html", "templates/admin/edit.html")
+	r.AddFromFiles("admin-create", "templates/base.html", "templates/admin/create.html")
+
 	return r
 }

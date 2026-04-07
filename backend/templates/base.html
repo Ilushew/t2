@@ -19,18 +19,18 @@
     
     <!-- Шапка -->
     <header class="bg-blue-600 text-white p-4 shadow">
-        <div class="container mx-auto flex justify-between items-center">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <h1 class="text-xl font-bold">Udmurtia AI Route</h1>
             <div>
                 {{if .IsAuthenticated}}
-                    <span class="mr-4">{{.Email}}</span>
+                    <span class="mr-0 sm:mr-4 mb-2 sm:mb-0 inline-block">{{.Email}}</span>
                     <a href="/auth/logout"
-                       class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
+                       class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition text-center block sm:inline-block">
                         Выйти
                     </a>
                 {{else}}
                     <a href="/auth/register"
-                       class="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded transition">
+                       class="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded transition text-center block sm:inline-block">
                         Войти
                     </a>
                 {{end}}

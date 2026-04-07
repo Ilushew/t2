@@ -83,6 +83,7 @@ func New() (*App, error) {
 
 	// роутер
 	deps := Deps{
+		Pool:        app.pool,
 		UserRepo:    app.userRepo,
 		EmailSvc:    app.emailSvc,
 		CodeService: app.codeService,
