@@ -1,0 +1,34 @@
+{{define "content"}}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Профиль пользователя</h1>
+
+    <!-- Карточка профиля -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center gap-4 mb-6">
+            <!-- Аватар (заглушка) -->
+            <div class="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-3xl font-bold">
+            </div>
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800">{{.Email}}</h2>
+                <span class="inline-block mt-1 px-3 py-1 text-sm rounded-full {{if .IsVerified}}bg-green-100 text-green-800{{else}}bg-yellow-100 text-yellow-800{{end}}">
+                    {{if .IsVerified}}Подтверждён{{else}}Не подтверждён{{end}}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция сохранённых маршрутов (заглушка на будущее) -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Сохранённые маршруты</h2>
+        <div class="text-center py-8 text-gray-500">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+            </svg>
+            <p>У вас пока нет сохранённых маршрутов</p>
+            <a href="/" class="inline-block mt-4 text-blue-600 hover:text-blue-800 underline">
+                Создать первый маршрут
+            </a>
+        </div>
+    </div>
+</div>
+{{end}}

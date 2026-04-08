@@ -16,6 +16,7 @@ func createRender() multitemplate.Renderer {
 	// загрузка цельных страниц
 	r.AddFromFiles("index", "templates/base.html", "templates/index.html")
 	r.AddFromFiles("register", "templates/base.html", "templates/auth/register.html")
+	r.AddFromFiles("profile", "templates/base.html", "templates/profile.html")
 
 	// загрузка частей страниц
 	r.AddFromFiles("verify", "templates/partials/verify-code-form.html")

@@ -55,6 +55,7 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 		deps.EmailSvc,
 		deps.CodeService,
 	)
+	profileHandler := handlers.NewProfileHandler(deps.UserRepo)
 	adminHandler := handlers.NewAdminHandler(deps.UserRepo)
 	adminGroup := r.Group("/admin", middleware.RequireAdmin(deps.UserRepo))
 	{
@@ -69,6 +70,7 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 
 	r.GET("/", indexHandler.ShowIndexPage)
 	r.POST("/generate", tripHandler.GenerateTrip)
+	r.GET("/profile", profileHandler.ShowProfilePage)
 
 	auth := r.Group("/auth")
 	{
