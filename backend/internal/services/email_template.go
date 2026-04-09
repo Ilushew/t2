@@ -31,7 +31,7 @@ func getVerificationEmailHTML(code string) string {
 					<p>Если вы не регистрировались — просто проигнорируйте это письмо.</p>
 				</div>
 				<div class="footer">
-					<p>© 2025 Udmurtia AI Route. Хакатон проект.</p>
+					<p>© 2026 Udmurtia AI Route. Хакатон проект.</p>
 				</div>
 			</div>
 		</body>

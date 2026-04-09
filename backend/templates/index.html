@@ -3,33 +3,144 @@
 {{define "content"}}
 <div class="container mx-auto p-4 max-w-2xl">
     <h1 class="text-3xl font-bold mb-6 text-center">Генератор маршрутов по Удмуртии</h1>
-    
+
     <!-- Форма с HTMX -->
-    <form hx-post="/generate" 
-          hx-target="#result-area" 
+    <form hx-post="/criteria"
+          hx-target="#result-area"
           hx-swap="innerHTML"
-          class="bg-white p-6 rounded-lg shadow-md mb-6">
-        
-        <label class="block text-gray-700 font-bold mb-2">
-            Выберите тип отдыха:
-        </label>
-        
-        <select name="trip_type" class="w-full border border-gray-300 rounded p-3 mb-4">
-            <option value="nature">Природа и активный отдых</option>
-            <option value="culture">Культура и музеи</option>
-            <option value="food">Гастрономический тур</option>
-            <option value="family">Семейный отдых</option>
-        </select>
-        
-        <button type="submit" 
+          class="bg-white p-6 rounded-lg shadow-md mb-6 space-y-6">
+
+        <!-- 1. Длительность поездки (радиокнопки) -->
+        <div>
+            <label class="block text-gray-700 font-bold mb-3">
+                Длительность поездки:
+            </label>
+            <div class="space-y-2">
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="radio" name="duration" value="1_day" class="w-4 h-4 text-blue-600" required>
+                    <span>1 день</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="radio" name="duration" value="2_days" class="w-4 h-4 text-blue-600">
+                    <span>2 дня</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="radio" name="duration" value="3_days" class="w-4 h-4 text-blue-600">
+                    <span>3 дня</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="radio" name="duration" value="more_3_days" class="w-4 h-4 text-blue-600">
+                    <span>Более 3 дней</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 2. Компания (выпадающий список) -->
+        <div>
+            <label class="block text-gray-700 font-bold mb-2" for="company">
+                С кем путешествуете:
+            </label>
+            <select id="company" name="company" class="w-full border border-gray-300 rounded p-3" required>
+                <option value="" disabled selected>Выберите вариант</option>
+                <option value="solo">Один</option>
+                <option value="family">С семьёй (с детьми)</option>
+                <option value="friends">С друзьями</option>
+            </select>
+        </div>
+
+        <!-- 3. Транспорт (переключатель) -->
+        <div>
+            <label class="block text-gray-700 font-bold mb-3">
+                Есть ли личный автомобиль:
+            </label>
+            <div class="flex space-x-6">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="has_car" value="true" class="w-4 h-4 text-blue-600" required>
+                    <span>Да</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="has_car" value="false" class="w-4 h-4 text-blue-600">
+                    <span>Нет</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 4. Бюджет (слайдер) -->
+        <div>
+            <label class="block text-gray-700 font-bold mb-2" for="budget">
+                Бюджет: <span id="budget-label" class="text-blue-600">средний</span>
+            </label>
+            <input type="range" id="budget" name="budget" min="0" max="2" value="1" step="1"
+                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Экономный</span>
+                <span>Средний</span>
+                <span>Не важен</span>
+            </div>
+        </div>
+
+        <!-- 5. Интересы (чекбоксы, множественный выбор) -->
+        <div>
+            <label class="block text-gray-700 font-bold mb-3">
+                Интересы (можно выбрать несколько):
+            </label>
+            <div class="space-y-2">
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="interests" value="history_culture" class="w-4 h-4 text-blue-600 rounded">
+                    <span>История и культура</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="interests" value="nature_active" class="w-4 h-4 text-blue-600 rounded">
+                    <span>Природа и активный отдых</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="interests" value="gastronomy" class="w-4 h-4 text-blue-600 rounded">
+                    <span>Гастрономия</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" name="interests" value="volunteering" class="w-4 h-4 text-blue-600 rounded">
+                    <span>Волонтёрство</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 6. Путешествие с животными (переключатель) -->
+        <div>
+            <label class="block text-gray-700 font-bold mb-3">
+                Путешествуете с животными:
+            </label>
+            <div class="flex space-x-6">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="with_pets" value="true" class="w-4 h-4 text-blue-600">
+                    <span>Да</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="with_pets" value="false" class="w-4 h-4 text-blue-600" checked>
+                    <span>Нет</span>
+                </label>
+            </div>
+        </div>
+
+        <button type="submit"
                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition">
-            🗺️ Сгенерировать маршрут
+            🗺️ Подобрать маршрут
         </button>
     </form>
-    
+
     <!-- Сюда будет вставляться результат -->
     <div id="result-area" class="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 min-h-[200px]">
         <p class="text-gray-500 text-center">Здесь появится ваш маршрут...</p>
     </div>
 </div>
+
+<!-- Скрипт для обновления метки бюджета при движении слайдера -->
+<script>
+    const budgetSlider = document.getElementById('budget');
+    const budgetLabel = document.getElementById('budget-label');
+    const budgetLabels = ['экономный', 'средний', 'не важен'];
+
+    budgetSlider.addEventListener('input', function() {
+        budgetLabel.textContent = budgetLabels[this.value];
+    });
+</script>
 {{end}}

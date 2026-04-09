@@ -28,6 +28,7 @@ func createRender() multitemplate.Renderer {
 	r.AddFromFiles("admin-view", "templates/base.html", "templates/admin/view.html")
 	r.AddFromFiles("admin-edit", "templates/base.html", "templates/admin/edit.html")
 	r.AddFromFiles("admin-create", "templates/base.html", "templates/admin/create.html")
+	r.AddFromFiles("admin-place-create", "templates/base.html", "templates/admin/place-create.html")
 
 	return r
 }

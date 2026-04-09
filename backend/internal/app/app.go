@@ -22,6 +22,7 @@ type App struct {
 	pool        *pgxpool.Pool
 	redisClient *redis.Client
 	userRepo    *repository.UserRepository
+	placeRepo   *repository.PlaceRepository
 	emailSvc    *services.EmailService
 	codeService *services.CodeService
 	router      *gin.Engine
@@ -80,11 +81,13 @@ func New() (*App, error) {
 
 	// репозитории
 	app.userRepo = repository.NewUserRepository(pool)
+	app.placeRepo = repository.NewPlaceRepository(pool)
 
 	// роутер
 	deps := Deps{
 		Pool:        app.pool,
 		UserRepo:    app.userRepo,
+		PlaceRepo:   app.placeRepo,
 		EmailSvc:    app.emailSvc,
 		CodeService: app.codeService,
 	}
