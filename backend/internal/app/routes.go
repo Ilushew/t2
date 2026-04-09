@@ -17,6 +17,7 @@ import (
 type Deps struct {
 	Pool        *pgxpool.Pool
 	UserRepo    *repository.UserRepository
+	PlaceRepo   *repository.PlaceRepository
 	EmailSvc    *services.EmailService
 	CodeService *services.CodeService
 }
@@ -48,15 +49,18 @@ func setupMiddleware(r *gin.Engine) {
 }
 
 func setupHandlers(r *gin.Engine, deps Deps) {
+	// создание хэндлеров
 	indexHandler := handlers.NewIndexHandler()
-	tripHandler := handlers.NewTripHandler()
+	criteriaHandler := handlers.NewCriteriaHandler(deps.PlaceRepo)
 	authHandler := handlers.NewAuthHandler(
 		deps.UserRepo,
 		deps.EmailSvc,
 		deps.CodeService,
 	)
 	profileHandler := handlers.NewProfileHandler(deps.UserRepo)
-	adminHandler := handlers.NewAdminHandler(deps.UserRepo)
+	adminHandler := handlers.NewAdminHandler(deps.UserRepo, deps.PlaceRepo)
+
+	// маршруты для админки
 	adminGroup := r.Group("/admin", middleware.RequireAdmin(deps.UserRepo))
 	{
 		adminGroup.GET("/", adminHandler.ShowTables)
@@ -68,8 +72,12 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 		adminGroup.POST("/table/:table/delete/:id", adminHandler.DeleteRow)
 	}
 
+	// главная страница
 	r.GET("/", indexHandler.ShowIndexPage)
-	r.POST("/generate", tripHandler.GenerateTrip)
+
+	// Маршрут для формы критериев (POST)
+	r.POST("/criteria", criteriaHandler.HandleCriteria)
+
 	r.GET("/profile", profileHandler.ShowProfilePage)
 
 	auth := r.Group("/auth")
