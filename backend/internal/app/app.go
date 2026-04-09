@@ -23,6 +23,7 @@ type App struct {
 	redisClient *redis.Client
 	userRepo    *repository.UserRepository
 	placeRepo   *repository.PlaceRepository
+	commentRepo *repository.PlaceCommentRepository
 	emailSvc    *services.EmailService
 	codeService *services.CodeService
 	router      *gin.Engine
@@ -63,9 +64,6 @@ func New() (*App, error) {
 		return nil, err
 	}
 
-	// импорт данных из JSON
-	importFromJSON(ctx, pool, "static/places_dump.json")
-
 	// email сервис
 	emailSvc, err := initEmailService()
 	app.emailSvc = emailSvc
@@ -85,13 +83,14 @@ func New() (*App, error) {
 	// репозитории
 	app.userRepo = repository.NewUserRepository(pool)
 	app.placeRepo = repository.NewPlaceRepository(pool)
+	app.commentRepo = repository.NewPlaceCommentRepository(pool)
 
 	// роутер
 	deps := Deps{
 		Pool:        app.pool,
 		UserRepo:    app.userRepo,
 		PlaceRepo:   app.placeRepo,
-		EmailSvc:    app.emailSvc,
+		CommentRepo: app.commentRepo,
 		CodeService: app.codeService,
 	}
 
