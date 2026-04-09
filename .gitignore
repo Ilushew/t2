@@ -43,3 +43,6 @@ temp/
 dist/
 build/
 main.exe
+
+#ml_service
+**/embedder/
