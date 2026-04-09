@@ -43,3 +43,7 @@ temp/
 dist/
 build/
 main.exe
+
+#ml_service
+**/embedder/
+ml_service/places_embeddings.pkl
