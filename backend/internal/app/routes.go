@@ -59,6 +59,7 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 	)
 	profileHandler := handlers.NewProfileHandler(deps.UserRepo)
 	adminHandler := handlers.NewAdminHandler(deps.UserRepo, deps.PlaceRepo)
+	applicationHandler := handlers.NewApplicationHandler(deps.EmailSvc)
 
 	// маршруты для админки
 	adminGroup := r.Group("/admin", middleware.RequireAdmin(deps.UserRepo))
@@ -77,6 +78,9 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 
 	// Маршрут для формы критериев (POST)
 	r.POST("/criteria", criteriaHandler.HandleCriteria)
+
+	// Заявка на маршрут
+	r.POST("/applications", applicationHandler.SubmitApplication)
 
 	r.GET("/profile", profileHandler.ShowProfilePage)
 
