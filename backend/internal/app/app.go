@@ -63,6 +63,9 @@ func New() (*App, error) {
 		return nil, err
 	}
 
+	// импорт данных из JSON
+	importFromJSON(ctx, pool, "static/places_dump.json")
+
 	// email сервис
 	emailSvc, err := initEmailService()
 	app.emailSvc = emailSvc
