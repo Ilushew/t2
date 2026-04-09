@@ -1,12 +1,18 @@
 <div id="route-result" class="space-y-4">
     {{range .places}}
-    <div class="bg-white p-4 rounded-lg shadow hover:shadow-lg transition">
-        <h3 class="text-xl font-bold text-gray-800">{{.Name}}</h3>
-        <p class="text-gray-600 mt-1">{{.Description}}</p>
+    <div class="bg-t2-white text-t2-black p-4 border-2 border-t2-black hover:border-t2-magenta transition">
+        <h3 class="text-xl font-bold tracking-wider">{{.Name}}</h3>
+        <p class="mt-1 text-sm">{{.Description}}</p>
         <div class="mt-2 flex items-center justify-between">
-            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{{.Category}}</span>
-            <span class="text-yellow-500 font-bold">★ {{.Rating}}</span>
+            <span class="bg-t2-black text-t2-white text-xs px-2 py-1 tracking-wider">{{.Category}}</span>
+            <span class="text-t2-magenta font-bold">★ {{.Rating}}</span>
         </div>
     </div>
+    {{else}}
+    {{if .message}}
+    <p class="text-center text-sm tracking-wider">{{.message}}</p>
+    {{else}}
+    <p class="text-center text-sm tracking-wider">МАРШРУТЫ НЕ НАЙДЕНЫ</p>
+    {{end}}
     {{end}}
 </div>

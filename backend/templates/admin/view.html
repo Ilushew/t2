@@ -2,51 +2,51 @@
 
 {{define "content"}}
 <div class="container mx-auto p-4 max-w-6xl">
-    <h1 class="text-2xl font-bold mb-4">{{.Title}}</h1>
+    <h1 class="text-2xl font-bold mb-4 tracking-widest">{{.Title}}</h1>
 
     <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <a href="/admin" class="text-blue-600 hover:underline">← Назад к таблицам</a>
+        <a href="/admin" class="text-t2-magenta hover:text-t2-black tracking-wider text-sm">← К ТАБЛИЦАМ</a>
         <a href="/admin/table/{{.TableName}}/create"
-           class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition text-sm">
-            + Добавить запись
+           class="bg-t2-black text-t2-white hover:bg-t2-magenta font-bold py-2 px-4 rounded-none transition text-sm tracking-wider">
+            + ДОБАВИТЬ ЗАПИСЬ
         </a>
     </div>
 
     <!-- Таблица (десктоп) — скрываем на мобилке -->
-    <div class="hidden sm:block overflow-x-auto bg-white rounded-lg shadow">
+    <div class="hidden sm:block overflow-x-auto bg-t2-white border-2 border-t2-black">
         <table class="w-full border-collapse">
             <thead>
-                <tr class="bg-gray-100">
+                <tr class="border-b-2 border-t2-black">
                     {{range .Columns}}
-                    <th class="border p-2 text-left text-sm font-semibold">{{.Name}}</th>
+                    <th class="border-b border-t2-black p-2 text-left text-sm font-bold tracking-wider">{{.Name}}</th>
                     {{end}}
-                    <th class="border p-2 text-center text-sm font-semibold">Действия</th>
+                    <th class="border-b border-t2-black p-2 text-center text-sm font-bold tracking-wider">ДЕЙСТВИЯ</th>
                 </tr>
             </thead>
             <tbody>
                 {{range $idx, $row := .Rows}}
-                <tr>
+                <tr class="border-b border-t2-black hover:bg-gray-50 transition">
                     {{range $j, $col := $.Columns}}
-                    <td class="border p-2 text-sm">{{index $row $j}}</td>
+                    <td class="border-b border-t2-black p-2 text-sm">{{index $row $j}}</td>
                     {{end}}
-                    <td class="border p-2 text-center">
+                    <td class="border-b border-t2-black p-2 text-center">
                         <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}"
-                           class="text-blue-600 hover:underline text-sm mr-2">
-                            Редактировать
+                           class="text-t2-magenta hover:text-t2-black tracking-wider text-sm mr-2">
+                            РЕДАКТИРОВАТЬ
                         </a>
                         <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}"
                               style="display:inline;"
-                              onsubmit="return confirm('Удалить запись?')">
+                              onsubmit="return confirm('УДАЛИТЬ ЗАПИСЬ?')">
                             <button type="submit"
-                                    class="text-red-600 hover:underline text-sm">
-                                Удалить
+                                    class="text-t2-magenta hover:text-t2-black tracking-wider text-sm">
+                                УДАЛИТЬ
                             </button>
                         </form>
                     </td>
                 </tr>
                 {{else}}
                 <tr>
-                    <td class="border p-4 text-center text-gray-400" colspan="99">Нет записей</td>
+                    <td class="p-4 text-center text-sm tracking-wider" colspan="99">НЕТ ЗАПИСЕЙ</td>
                 </tr>
                 {{end}}
             </tbody>
@@ -56,30 +56,30 @@
     <!-- Карточки (мобилка) — скрываем на десктопе -->
     <div class="sm:hidden space-y-3">
         {{range $idx, $row := .Rows}}
-        <div class="bg-white rounded-lg shadow p-4 border">
+        <div class="bg-t2-white border-2 border-t2-black p-4">
             {{range $j, $col := $.Columns}}
             <div class="mb-2">
-                <span class="font-semibold text-sm text-gray-500">{{$col.Name}}:</span>
+                <span class="font-bold text-sm tracking-wider">{{$col.Name}}:</span>
                 <span class="text-sm ml-1">{{index $row $j}}</span>
             </div>
             {{end}}
-            <div class="flex gap-3 mt-3 pt-3 border-t">
+            <div class="flex gap-3 mt-3 pt-3 border-t-2 border-t2-black">
                 <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}"
-                   class="text-blue-600 hover:underline text-sm py-2 px-4 flex-1 text-center border border-blue-600 rounded">
-                    Редактировать
+                   class="text-t2-magenta hover:text-t2-black tracking-wider text-sm py-2 px-4 flex-1 text-center border-2 border-t2-black">
+                    РЕДАКТИРОВАТЬ
                 </a>
                 <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}"
                       class="flex-1"
-                      onsubmit="return confirm('Удалить запись?')">
+                      onsubmit="return confirm('УДАЛИТЬ ЗАПИСЬ?')">
                     <button type="submit"
-                            class="text-red-600 hover:underline text-sm py-2 px-4 w-full border border-red-600 rounded">
-                        Удалить
+                            class="text-t2-magenta hover:text-t2-black tracking-wider text-sm py-2 px-4 w-full border-2 border-t2-black">
+                        УДАЛИТЬ
                     </button>
                 </form>
             </div>
         </div>
         {{else}}
-        <p class="text-center text-gray-400 py-8">Нет записей</p>
+        <p class="text-center text-sm tracking-wider py-8">НЕТ ЗАПИСЕЙ</p>
         {{end}}
     </div>
 </div>

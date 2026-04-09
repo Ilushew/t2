@@ -2,20 +2,20 @@
 
 {{define "content"}}
 <div class="container mx-auto p-4 max-w-4xl">
-    <h1 class="text-2xl sm:text-3xl font-bold mb-6">Админ-панель</h1>
-    <p class="text-gray-600 mb-4">Выберите таблицу для просмотра:</p>
+    <h1 class="text-2xl sm:text-3xl font-bold mb-6 tracking-widest">АДМИН-ПАНЕЛЬ</h1>
+    <p class="text-sm tracking-wider mb-4">ВЫБЕРИТЕ ТАБЛИЦУ:</p>
 
     <div class="grid gap-3">
         {{range .Tables}}
         <a href="/admin/table/{{.}}"
-           class="block bg-white p-4 rounded-lg shadow hover:shadow-md transition border border-gray-200 text-center text-lg">
+           class="block bg-t2-white border-2 border-t2-black hover:border-t2-magenta p-4 text-center text-lg tracking-wider transition">
              {{.}}
         </a>
         {{else}}
-        <p class="text-gray-400">Нет таблиц</p>
+        <p class="text-sm tracking-wider">НЕТ ТАБЛИЦ</p>
         {{end}}
     </div>
 
-    <a href="/" class="mt-6 inline-block text-blue-600 hover:underline">← На главную</a>
+    <a href="/" class="mt-6 inline-block text-t2-magenta hover:text-t2-black tracking-wider text-sm">← НА ГЛАВНУЮ</a>
 </div>
 {{end}}

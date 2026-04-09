@@ -1,25 +1,25 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <h2 class="text-2xl font-bold text-center mb-6">Вход / Регистрация</h2>
+<div class="min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full bg-t2-white text-t2-black border-2 border-t2-black p-8">
+        <h2 class="text-2xl font-bold text-center mb-6 tracking-widest">ВХОД</h2>
             <div id="auth-form">
-                <form hx-post="/auth/register" 
-                    hx-target="#auth-form" 
+                <form hx-post="/auth/register"
+                    hx-target="#auth-form"
                     hx-swap="outerHTML"
                     class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" 
-                            name="email" 
-                            placeholder="your@email.com" 
+                        <label class="block text-sm font-bold tracking-wider">EMAIL</label>
+                        <input type="email"
+                            name="email"
+                            placeholder="your@email.com"
                             required
-                            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="mt-1 w-full px-4 py-2 border-2 border-t2-black bg-t2-white text-t2-black rounded-none">
                     </div>
-                    <button type="submit" 
-                            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
-                        Получить код
+                    <button type="submit"
+                            class="w-full bg-t2-black text-t2-white py-2 px-4 rounded-none hover:bg-t2-magenta transition font-bold tracking-wider text-sm">
+                        ПОЛУЧИТЬ КОД
                     </button>
                 </form>
             </div>
