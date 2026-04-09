@@ -1,147 +1,1362 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="container mx-auto p-4 max-w-2xl">
-    <h1 class="text-3xl font-bold mb-2 text-center tracking-widest">ГЕНЕРАТОР МАРШРУТОВ</h1>
-    <p class="text-center text-sm tracking-wider mb-6">ПОДБОР МАРШРУТА ПО КРИТЕРИЯМ</p>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор маршрутов</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+     <style>
+    :root {
+        --bg-dark: #0a0a0a;
+        --card-bg: #141414; /* Чуть светлее фона страницы для контраста */
+        --input-bg: #1e1e1e; /* Светлее для полей ввода */
+        --border-color: #333333; /* Более видимые границы */
+        --border-focus: #ff40d0;
+        --text-primary: #ffffff; /* Чистый белый */
+        --text-secondary: #dfdfdf; /* Светло-серый для подписей (хорошо читается) */
+        --accent: #ff40d0;
+        --accent-gradient: linear-gradient(135deg, #ff40d0 0%, #d600a0 100%);
+    }
 
-    <!-- Форма с HTMX -->
-    <form hx-post="/criteria"
-          hx-target="#result-area"
-          hx-swap="innerHTML"
-          class="bg-t2-white text-t2-black p-6 rounded-none border-2 border-t2-black mb-6 space-y-6">
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        line-height: 1.5;
+    }
 
-        <!-- 1. Длительность поездки (радиокнопки) -->
-        <div>
-            <label class="block font-bold mb-3 tracking-wider text-sm">
-                ДЛИТЕЛЬНОСТЬ ПОЕЗДКИ:
-            </label>
-            <div class="space-y-2">
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="radio" name="duration" value="1_day" class="accent-t2-magenta w-4 h-4" required>
-                    <span class="group-hover:text-t2-magenta transition">1 день</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="radio" name="duration" value="2_days" class="accent-t2-magenta w-4 h-4">
-                    <span class="group-hover:text-t2-magenta transition">2 дня</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="radio" name="duration" value="3_days" class="accent-t2-magenta w-4 h-4">
-                    <span class="group-hover:text-t2-magenta transition">3 дня</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="radio" name="duration" value="more_3_days" class="accent-t2-magenta w-4 h-4">
-                    <span class="group-hover:text-t2-magenta transition">Более 3 дней</span>
-                </label>
+    .generator-wrapper {
+        max-width: 800px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+
+    .gen-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .gen-title {
+        font-size: clamp(32px, 6vw, 48px);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 8px;
+        color: var(--text-primary); /* Белый заголовок */
+    }
+
+    .gen-subtitle {
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 600;
+    }
+
+    /* Карточка формы */
+    .gen-form {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 10px; }
+    
+    .form-label {
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-secondary); /* Светло-серый, но читаемый */
+    }
+    
+    .form-label .accent-text { 
+        color: var(--accent); 
+        font-weight: 800; 
+    }
+
+    /* Инпуты и селекты */
+    .form-input, .form-select {
+        background: var(--input-bg);
+        border: 2px solid var(--border-color);
+        color: var(--text-primary); /* БЕЛЫЙ ТЕКСТ */
+        padding: 16px 18px;
+        border-radius: 14px;
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+        width: 100%;
+        appearance: none; /* Убирает стандартный стиль браузера */
+    }
+
+    /* Стилизация placeholder'ов и disabled опций */
+    .form-select option { 
+        background: var(--input-bg); 
+        color: var(--text-primary); /* БЕЛЫЙ ТЕКСТ В СПИСКЕ */
+    }
+    .form-select option:disabled {
+        color: #666; /* Серый только для плейсхолдера "Выберите вариант" */
+    }
+
+    .form-input:focus, .form-select:focus {
+        border-color: var(--border-focus);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(255, 64, 208, 0.15);
+        color: var(--text-primary);
+    }
+
+    /* Радио и чекбоксы */
+    .choice-grid { display: flex; flex-direction: column; gap: 10px; }
+    .choice-grid.row { flex-direction: row; flex-wrap: wrap; }
+    
+    .choice-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 14px 16px;
+        background: var(--input-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .choice-label:hover { 
+        border-color: var(--accent); 
+        background: #252525; 
+    }
+    
+    .choice-label input { 
+        accent-color: var(--accent); 
+        width: 18px; 
+        height: 18px; 
+        cursor: pointer; 
+        flex-shrink: 0; 
+    }
+    
+    .choice-label span { 
+        color: var(--text-primary); /* БЕЛЫЙ ТЕКСТ ВЫБОРА */
+    }
+    
+    /* Когда выбрано - текст розовый */
+    .choice-label input:checked + span { 
+        color: var(--accent); 
+    }
+
+    /* Слайдер бюджета */
+    .form-range {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: #333;
+        border-radius: 4px;
+        outline: none;
+        margin: 12px 0 16px;
+    }
+
+    .form-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 24px;
+        height: 24px;
+        background: var(--accent);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid var(--card-bg);
+        box-shadow: 0 0 12px rgba(255, 64, 208, 0.4);
+        transition: transform 0.2s;
+    }
+    
+    .form-range::-webkit-slider-thumb:hover { transform: scale(1.1); }
+
+    .range-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #999999; /* Светло-серый для подписей слайдера */
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    /* Кнопка отправки */
+    .btn-submit {
+        background: var(--accent-gradient);
+        color: #fff;
+        border: none;
+        padding: 18px;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(255, 64, 208, 0.35);
+    }
+
+    /* Зона результата */
+    .result-area {
+        margin-top: 30px;
+        background: var(--card-bg);
+        border: 2px dashed var(--border-color);
+        border-radius: 24px;
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 600;
+        transition: all 0.4s ease;
+        padding: 20px;
+    }
+    
+    .result-area.loaded {
+        border-style: solid;
+        border-color: var(--accent);
+        background: #1a1a1a;
+        color: var(--text-primary);
+    }
+
+    @media (max-width: 600px) {
+        .gen-form { padding: 25px; }
+        .choice-grid.row { flex-direction: column; }
+    }
+    </style>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a1a1a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .hero-location {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ff40d0;
+            font-size: 14px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero-location svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .hero-title {
+            font-size: clamp(48px, 10vw, 96px);
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .hero-title .pink {
+            color: #ff40d0;
+            display: block;
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: #cccccc;
+            max-width: 800px;
+            line-height: 1.6;
+            margin-bottom: 50px;
+            padding: 0 20px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 18px 40px;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff40d0 0%, #ff00aa 100%);
+            color: #ffffff;
+            border: 2px solid transparent;
+            box-shadow: 0 10px 30px rgba(255, 64, 208, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 64, 208, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+        }
+
+        .btn-secondary:hover {
+            background: #ffffff;
+            color: #0a0a0a;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff40d0;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* Why Udmurtia Section */
+        .why-section {
+            background: #0a0a0a;
+            padding: 100px 40px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 800;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: #999999;
+            font-size: 18px;
+            margin-bottom: 60px;
+        }
+
+        .title-underline {
+            width: 60px;
+            height: 4px;
+            background: #ff40d0;
+            margin: 20px auto 40px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: left;
+            transition: transform 0.3s ease;
+            border: 1px solid #2a2a2a;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            margin-bottom: 25px;
+        }
+
+        .feature-icon svg {
+            width: 48px;
+            height: 48px;
+        }
+
+        .feature-icon.green svg { color: #00ff88; }
+        .feature-icon.blue svg { color: #00d4ff; }
+        .feature-icon.pink svg { color: #ff40d0; }
+        .feature-icon.white svg { color: #ffffff; }
+
+        .feature-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            line-height: 1.3;
+        }
+
+        .feature-text {
+            color: #999999;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        /* What to See Section */
+        .what-to-see {
+            background: #ffffff;
+            padding: 100px 40px;
+        }
+
+        .what-to-see .section-title {
+            color: #0a0a0a;
+        }
+
+        .what-to-see .section-subtitle {
+            color: #666666;
+        }
+
+        .attractions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .attraction-card {
+            position: relative;
+            border-radius: 30px;
+            overflow: hidden;
+            height: 500px;
+            cursor: pointer;
+        }
+
+        .attraction-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .attraction-card:hover .attraction-image {
+            transform: scale(1.1);
+        }
+
+        .attraction-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 40px 30px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+            color: #ffffff;
+        }
+
+        .attraction-line {
+            width: 40px;
+            height: 3px;
+            margin-bottom: 15px;
+        }
+
+        .attraction-line.green { background: #00ff88; }
+        .attraction-line.blue { background: #00d4ff; }
+        .attraction-line.pink { background: #ff40d0; }
+
+        .attraction-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .attraction-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #cccccc;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .why-section,
+            .what-to-see {
+                padding: 60px 20px;
+            }
+
+            .features-grid,
+            .attractions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+                padding: 0 20px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: #141414;
+            --bg-input: #1c1c1e;
+            --pink: #ff40d0;
+            --cyan: #00d4ff;
+            --green: #00ff88;
+            --white: #ffffff;
+            --text-main: #ffffff;
+            --text-label: #e0e0e0; /* Более яркий серый для читаемости */
+            --text-muted: #888888;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* --- STATS SECTION --- */
+        .stats-section {
+            padding: 100px 20px 60px;
+            background: var(--bg-dark);
+            text-align: center;
+            border-bottom: 1px solid #222;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 40px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-item { min-width: 140px; }
+        
+        .stat-number {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-label); /* Улучшена читаемость */
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .c-pink { color: var(--pink); }
+        .c-cyan { color: var(--cyan); }
+        .c-white { color: var(--white); }
+        .c-green { color: var(--green); }
+
+        /* --- CONTACT SECTION --- */
+        .contact-section {
+            padding: 80px 20px;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, #120814 100%); /* Легкий фиолетовый оттенок внизу */
+        }
+
+        .contact-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 3px;
+            background: var(--pink);
+            margin: 10px auto 0;
+        }
+
+        .section-desc {
+            color: var(--text-label); /* Улучшена читаемость */
+            font-size: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        /* Контакты слева */
+        .contact-info h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .icon-box svg { width: 20px; height: 20px; color: white; }
+        .bg-pink { background: var(--pink); }
+        .bg-cyan { background: var(--cyan); }
+        .bg-green { background: var(--green); }
+
+        .info-text label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted); /* Светлее для читаемости */
+            margin-bottom: 2px;
+        }
+
+        .info-text p {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Форма справа */
+        .form-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ВИЗУАЛЬНО ВЫДЕЛЕННОЕ НАЗВАНИЕ МАРШРУТА */
+        .route-selection-box {
+            background: rgba(255, 64, 208, 0.08);
+            border: 1px solid var(--pink);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            position: relative;
+            box-shadow: 0 0 15px rgba(255, 64, 208, 0.15);
+        }
+
+        .route-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--pink);
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .route-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--white);
+            text-transform: uppercase;
+        }
+
+        /* Инпуты */
+        .input-field {
+            background: var(--bg-input);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 16px 20px;
+            width: 100%;
+            color: var(--white);
+            font-family: inherit;
+            font-size: 15px;
+            transition: 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--pink);
+            background: #222;
+        }
+
+        .input-field::placeholder {
+            color: #777; /* Читаемый плейсхолдер */
+        }
+
+        textarea.input-field {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Кнопка */
+        .btn-submit {
+            background: linear-gradient(90deg, var(--pink) 0%, #d600a0 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 64, 208, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid #222;
+        }
+        
+        .footer-logo {
+            font-size: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .copyright {
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .contact-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            .contact-info { order: 2; }
+            .form-wrapper { order: 1; }
+            .stats-grid { gap: 30px 20px; }
+        }
+    </style>
+
+    <style>
+        :root {
+            --bg-dark: #0a0a0a; /* Единый черный фон для всего сайта */
+            --bg-card: #141414;
+            --pink: #ff40d0;
+            --text-white: #ffffff;
+            --text-gray: #aaaaaa;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-white);
+        }
+
+        /* Секция генератора - на всю ширину */
+        .generator-section {
+            width: 100%;
+            background: var(--bg-dark);
+            padding: 60px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .generator-container {
+            width: 100%;
+            max-width: 600px; /* Ограничиваем ширину самой формы, но не фона */
+        }
+
+        .gen-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .gen-title {
+            font-size: 28px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .gen-subtitle {
+            color: var(--text-gray);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        /* Карточка формы */
+        .gen-form {
+            background: var(--bg-card);
+            border: 1px solid #222;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        .form-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-gray);
+        }
+
+        /* Стили для радио-кнопок (как широкие строки на скриншоте) */
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .radio-option:hover { border-color: var(--pink); }
+        .radio-option input { accent-color: var(--pink); width: 16px; height: 16px; }
+        .radio-option span { font-size: 14px; font-weight: 600; }
+
+        /* Select */
+        .form-select {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            color: white;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Слайдер */
+        .range-wrapper { padding: 0 5px; }
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+        
+        .budget-value { color: var(--pink); font-weight: bold; }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            appearance: none;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--pink);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Чекбоксы */
+        .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .checkbox-option input { accent-color: var(--pink); }
+
+        /* Кнопка */
+        .btn-submit {
+            background: var(--pink);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+
+        /* Зона результата */
+        .result-box {
+            margin-top: 20px;
+            border: 2px dashed #333;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            color: #444;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Для нижних секций (пример выравнивания) */
+        .stats-section {
+            width: 100%;
+            background: var(--bg-dark);
+            padding: 60px 20px;
+            text-align: center;
+            border-top: 1px solid #222;
+        }
+    </style>
+</head>
+<body>
+
+
+<section class="hero">
+        <div class="hero-location">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span>Откройте для себя</span>
+        </div>
+        
+        <h1 class="hero-title">
+            УДМУРТИЯ<br>
+            <span class="pink">РОДИНА</span><br>
+            КАЛАШНИКОВА
+        </h1>
+        
+        <p class="hero-description">
+            Регион с богатой культурой, живописной природой и уникальными традициями. 
+            Создайте свой идеальный маршрут и познайте душу России.
+        </p>
+        
+        <div class="hero-buttons">
+            <a href="#" class="btn btn-primary">Подобрать маршрут</a>
+            <a href="#" class="btn btn-secondary">Узнать больше</a>
+        </div>
+        
+        <div class="scroll-indicator">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M19 12l-7 7-7-7"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Why Udmurtia Section -->
+    <section class="why-section">
+        <div class="container">
+            <h2 class="section-title">ПОЧЕМУ УДМУРТИЯ</h2>
+            <div class="title-underline"></div>
+            <p class="section-subtitle">Регион, где сохранилась подлинная культура и нетронутая природа</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon green">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22V8M5 12l7-7 7 7M5 12v8a2 2 0 002 2h10a2 2 0 002-2v-8"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">ПРИРОДА</h3>
+                    <p class="feature-text">Бескрайние леса, чистые реки и живописные озёра</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon blue">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21l6.5-6.5M21 10l-8.5 8.5"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">АКТИВНЫЙ<br>ОТДЫХ</h3>
+                    <p class="feature-text">Пешие маршруты, сплавы и экотропы круглый год</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon pink">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">ГАСТРОНОМИЯ</h3>
+                    <p class="feature-text">Уникальная удмуртская кухня и местные деликатесы</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon white">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">КУЛЬТУРА</h3>
+                    <p class="feature-text">Аутентичные традиции финно-угорского народа</p>
+                </div>
             </div>
         </div>
+    </section>
 
-        <!-- 2. Компания (выпадающий список) -->
-        <div>
-            <label class="block font-bold mb-2 tracking-wider text-sm" for="company">
-                С КЕМ ПУТЕШЕСТВУЕТЕ:
-            </label>
-            <select id="company" name="company" class="w-full border-2 border-t2-black bg-t2-white text-t2-black rounded-none p-3 text-base" required>
-                <option value="" disabled selected>ВЫБЕРИТЕ ВАРИАНТ</option>
-                <option value="solo">ОДИН</option>
-                <option value="family">С СЕМЬЁЙ (С ДЕТЬМИ)</option>
-                <option value="friends">С ДРУЗЬЯМИ</option>
-            </select>
-        </div>
+    <!-- What to See Section -->
+    <section class="what-to-see">
+        <div class="container">
+            <h2 class="section-title">ЧТО УВИДЕТЬ</h2>
+            <div class="title-underline"></div>
+            <p class="section-subtitle">Каждый уголок Удмуртии хранит свою историю и красоту</p>
+            
+            <div class="attractions-grid">
+                <div class="attraction-card">
+                    <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=800" alt="Лесные чудеса" class="attraction-image">
+                    <div class="attraction-overlay">
+                        <div class="attraction-line green"></div>
+                        <h3 class="attraction-title">ЛЕСНЫЕ ЧУДЕСА</h3>
+                        <p class="attraction-text">Погрузитесь в атмосферу нетронутых лесов Удмуртии, где каждая тропа ведёт к новым открытиям</p>
+                    </div>
+                </div>
 
-        <!-- 3. Транспорт (переключатель) -->
-        <div>
-            <label class="block font-bold mb-3 tracking-wider text-sm">
-                ЛИЧНЫЙ АВТОМОБИЛЬ:
-            </label>
-            <div class="flex space-x-6">
-                <label class="flex items-center space-x-2 cursor-pointer group">
-                    <input type="radio" name="has_car" value="true" class="accent-t2-magenta w-4 h-4" required>
-                    <span class="group-hover:text-t2-magenta transition">ДА</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer group">
-                    <input type="radio" name="has_car" value="false" class="accent-t2-magenta w-4 h-4">
-                    <span class="group-hover:text-t2-magenta transition">НЕТ</span>
-                </label>
+                <div class="attraction-card">
+                    <img src="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800" alt="Живописные реки" class="attraction-image">
+                    <div class="attraction-overlay">
+                        <div class="attraction-line blue"></div>
+                        <h3 class="attraction-title">ЖИВОПИСНЫЕ<br>РЕКИ</h3>
+                        <p class="attraction-text">Кама, Вятка и десятки малых рек создают уникальную экосистему региона</p>
+                    </div>
+                </div>
+
+                <div class="attraction-card">
+                    <img src="https://images.unsplash.com/photo-1507371341430-73d16122185b?w=800" alt="Золотая осень" class="attraction-image">
+                    <div class="attraction-overlay">
+                        <div class="attraction-line pink"></div>
+                        <h3 class="attraction-title">ЗОЛОТАЯ ОСЕНЬ</h3>
+                        <p class="attraction-text">Осенняя палитра удмуртских лесов завораживает красками и умиротворением</p>
+                    </div>
+                </div>
+
+                <div class="attraction-card">
+                    <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800" alt="Деревянное зодчество" class="attraction-image">
+                    <div class="attraction-overlay">
+                        <div class="attraction-line green"></div>
+                        <h3 class="attraction-title">ДЕРЕВЯННОЕ<br>ЗОДЧЕСТВО</h3>
+                        <p class="attraction-text">Уникальная традиционная архитектура финно-угорских народов</p>
+                    </div>
+                </div>
+
+                <div class="attraction-card">
+                    <img src="https://images.unsplash.com/photo-1483664852095-d6cc6870705d?w=800" alt="Зимняя сказка" class="attraction-image">
+                    <div class="attraction-overlay">
+                        <div class="attraction-line blue"></div>
+                        <h3 class="attraction-title">ЗИМНЯЯ СКАЗКА</h3>
+                        <p class="attraction-text">Снежные пейзажи превращают регион в настоящую зимнюю страну чудес</p>
+                    </div>
+                </div>
+
+                <div class="attraction-card">
+                    <img src="https://images.unsplash.com/photo-1490750967860-bcf2e9447456?w=800" alt="Цветущие луга" class="attraction-image">
+                    <div class="attraction-overlay">
+                        <div class="attraction-line green"></div>
+                        <h3 class="attraction-title">ЦВЕТУЩИЕ ЛУГА</h3>
+                        <p class="attraction-text">Летом регион покрывается ковром из полевых цветов и трав</p>
+                    </div>
+                </div>
             </div>
         </div>
+    </section>
 
-        <!-- 4. Бюджет (слайдер) -->
-        <div>
-            <label class="block font-bold mb-2 tracking-wider text-sm" for="budget">
-                БЮДЖЕТ: <span id="budget-label" class="text-t2-magenta">СРЕДНИЙ</span>
-            </label>
-            <input type="range" id="budget" name="budget" min="0" max="2" value="1" step="1"
-                   class="w-full h-2 bg-gray-300 rounded-none appearance-none cursor-pointer accent-t2-magenta">
-            <div class="flex justify-between text-xs mt-1 tracking-wider">
-                <span>ЭКОНОМНЫЙ</span>
-                <span>СРЕДНИЙ</span>
-                <span>НЕ ВАЖЕН</span>
+
+
+<section class="generator-section">
+        <div class="generator-container">
+            <div class="gen-header">
+                <h1 class="gen-title">Генератор маршрутов</h1>
+                <p class="gen-subtitle">Подбор маршрута по критериям</p>
+            </div>
+
+            <form class="gen-form">
+                <!-- 1. Длительность -->
+                <div class="form-group">
+                    <label class="form-label">Длительность поездки:</label>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="duration" checked><span>1 день</span></label>
+                        <label class="radio-option"><input type="radio" name="duration"><span>2 дня</span></label>
+                        <label class="radio-option"><input type="radio" name="duration"><span>3 дня</span></label>
+                        <label class="radio-option"><input type="radio" name="duration"><span>Более 3 дней</span></label>
+                    </div>
+                </div>
+
+                <!-- 2. Компания -->
+                <div class="form-group">
+                    <label class="form-label">С кем путешествуете:</label>
+                    <select class="form-select">
+                        <option>Выберите вариант</option>
+                    </select>
+                </div>
+
+                <!-- 3. Авто -->
+                <div class="form-group">
+                    <label class="form-label">Личный автомобиль:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label class="radio-option" style="flex:1; justify-content: center;"><input type="radio" name="car"><span>Да</span></label>
+                        <label class="radio-option" style="flex:1; justify-content: center;"><input type="radio" name="car" checked><span>Нет</span></label>
+                    </div>
+                </div>
+
+                <!-- 4. Бюджет -->
+                <div class="form-group">
+                    <label class="form-label">Бюджет: <span class="budget-value">Средний</span></label>
+                    <div class="range-wrapper">
+                        <input type="range" min="0" max="2" value="1">
+                        <div class="range-labels">
+                            <span>Экономный</span>
+                            <span>Средний</span>
+                            <span>Не важен</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Интересы -->
+                <div class="form-group">
+                    <label class="form-label">Интересы (можно несколько):</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-option"><input type="checkbox"><span>История и культура</span></label>
+                        <label class="checkbox-option"><input type="checkbox"><span>Природа и активный отдых</span></label>
+                        <label class="checkbox-option"><input type="checkbox"><span>Гастрономия</span></label>
+                        <label class="checkbox-option"><input type="checkbox"><span>Волонтёрство</span></label>
+                    </div>
+                </div>
+
+                <!-- 6. Животные -->
+                <div class="form-group">
+                    <label class="form-label">Путешествуете с животными:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label class="radio-option" style="flex:1; justify-content: center;"><input type="radio" name="pets"><span>Да</span></label>
+                        <label class="radio-option" style="flex:1; justify-content: center;"><input type="radio" name="pets" checked><span>Нет</span></label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Подобрать маршрут</button>
+            </form>
+
+            <div class="result-box">
+                Здесь появится ваш маршрут
             </div>
         </div>
+    </section>
 
-        <!-- 5. Интересы (чекбоксы, множественный выбор) -->
-        <div>
-            <label class="block font-bold mb-3 tracking-wider text-sm">
-                ИНТЕРЕСЫ (МОЖНО НЕСКОЛЬКО):
-            </label>
-            <div class="space-y-2">
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="interests" value="history_culture" class="accent-t2-magenta w-4 h-4 rounded-none">
-                    <span class="group-hover:text-t2-magenta transition">ИСТОРИЯ И КУЛЬТУРА</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="interests" value="nature_active" class="accent-t2-magenta w-4 h-4 rounded-none">
-                    <span class="group-hover:text-t2-magenta transition">ПРИРОДА И АКТИВНЫЙ ОТДЫХ</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="interests" value="gastronomy" class="accent-t2-magenta w-4 h-4 rounded-none">
-                    <span class="group-hover:text-t2-magenta transition">ГАСТРОНОМИЯ</span>
-                </label>
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" name="interests" value="volunteering" class="accent-t2-magenta w-4 h-4 rounded-none">
-                    <span class="group-hover:text-t2-magenta transition">ВОЛОНТЁРСТВО</span>
-                </label>
-            </div>
-        </div>
 
-        <!-- 6. Путешествие с животными (переключатель) -->
-        <div>
-            <label class="block font-bold mb-3 tracking-wider text-sm">
-                ПУТЕШЕСТВУЕТЕ С ЖИВОТНЫМИ:
-            </label>
-            <div class="flex space-x-6">
-                <label class="flex items-center space-x-2 cursor-pointer group">
-                    <input type="radio" name="with_pets" value="true" class="accent-t2-magenta w-4 h-4">
-                    <span class="group-hover:text-t2-magenta transition">ДА</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer group">
-                    <input type="radio" name="with_pets" value="false" class="accent-t2-magenta w-4 h-4" checked>
-                    <span class="group-hover:text-t2-magenta transition">НЕТ</span>
-                </label>
-            </div>
-        </div>
-
-        <button type="submit"
-                class="w-full bg-t2-black hover:bg-t2-magenta text-t2-white font-bold py-3 px-4 rounded-none transition tracking-widest text-sm">
-            ПОДОБРАТЬ МАРШРУТ
-        </button>
-    </form>
-
-    <!-- Сюда будет вставляться результат -->
-    <div id="result-area" class="bg-t2-white border-2 border-t2-black p-6 min-h-[200px] flex items-center justify-center">
-        <p class="text-t2-black text-center tracking-wider text-sm">ЗДЕСЬ ПОЯВИТСЯ ВАШ МАРШРУТ</p>
-    </div>
-</div>
-
-<!-- Скрипт для обновления метки бюджета при движении слайдера -->
 <script>
     const budgetSlider = document.getElementById('budget');
     const budgetLabel = document.getElementById('budget-label');
     const budgetLabels = ['ЭКОНОМНЫЙ', 'СРЕДНИЙ', 'НЕ ВАЖЕН'];
+    const resultArea = document.getElementById('result-area');
 
+    // Обновление метки бюджета
     budgetSlider.addEventListener('input', function() {
         budgetLabel.textContent = budgetLabels[this.value];
     });
+
+    // HTMX: добавляем класс loaded при получении ответа
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if(event.detail.target.id === 'result-area') {
+            resultArea.classList.add('loaded');
+            resultArea.querySelector('p')?.remove();
+        }
+    });
 </script>
+
+<section class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number c-pink">42<br>ТЫС</div>
+                <div class="stat-label">км² Площадь</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number c-cyan">1500+</div>
+                <div class="stat-label">Рек</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number c-white">800+</div>
+                <div class="stat-label">Озёр</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number c-green">60%</div>
+                <div class="stat-label">Покрыто лесами</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Секция Контактов -->
+    <section class="contact-section">
+        <div class="contact-container">
+            <div class="section-header">
+                <h2 class="section-title">Свяжитесь с нами</h2>
+                <p class="section-desc">Готовы начать свой проект? Напишите нам, и мы свяжемся с вами в ближайшее время.</p>
+            </div>
+
+            <div class="contact-grid">
+                <!-- Левая колонка: Инфо -->
+                <div class="contact-info">
+                    <h3>Контактная информация</h3>
+                    
+                    <div class="info-item">
+                        <div class="icon-box bg-pink">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div class="info-text">
+                            <label>Email</label>
+                            <p>hello@company.com</p>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="icon-box bg-cyan">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        </div>
+                        <div class="info-text">
+                            <label>Телефон</label>
+                            <p>+7 (999) 123-45-67</p>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="icon-box bg-green">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <div class="info-text">
+                            <label>Адрес</label>
+                            <p>Москва, Россия</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка: Форма -->
+                <div class="form-wrapper">
+                    
+                    <!-- 3. Выделенное название маршрута (не инпут) -->
+                    <div class="route-selection-box">
+                        <div class="route-label">Ваш выбор:</div>
+                        <div class="route-name">Маршрут "Легенды Камы"</div>
+                    </div>
+
+                    <input type="email" class="input-field" placeholder="Ваш Email" required>
+                    <textarea class="input-field" placeholder="Ваше сообщение" required></textarea>
+                    
+                    <button class="btn-submit">
+                        Отправить
+                        <!-- Иконка самолетика -->
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Футер -->
+    <footer>
+        <div class="footer-logo">Откройте Удмуртию</div>
+        <p class="copyright">© 2026 Генератор маршрутов по Удмуртии. Все права защищены.</p>
+    </footer>
+
+</body>
+</html>
 {{end}}

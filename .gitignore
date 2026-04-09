@@ -45,5 +45,5 @@ build/
 main.exe
 
 #ml_service
-**/embedder/
-ml_service/places_embeddings.pkl
+ml_service/embedder/
+places_embeddings.pkl
