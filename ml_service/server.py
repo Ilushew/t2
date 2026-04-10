@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, List
@@ -10,10 +11,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 class RecommendationRequest(BaseModel):
+    duration: str
+    company: str
+    has_car: bool
+    budget: int
+    interests: List[str]
+    with_pets: bool
     query: str
-    preferences: Optional[Dict] = None
-    filters: Optional[Dict] = None
-    top_k: int = 5
+
+    
+    
 
 recommender: Optional[ReccomendationModel] = None
 
@@ -38,8 +45,7 @@ def get_recommendations(req: RecommendationRequest):
         raise HTTPException(status_code=503, detail="Модель не загружена.")
     
     try:
-        # Модель возвращает List[int] → FastAPI сразу сериализует в JSON-массив
-        return recommender.predict()
+        return recommender.predict(req)
     except Exception as e:
         logger.error(f"Ошибка: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Внутренняя ошибка")
