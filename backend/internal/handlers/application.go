@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -22,25 +23,16 @@ func NewApplicationHandler(emailSvc *services.EmailService) *ApplicationHandler 
 
 // SubmitApplication обрабатывает отправку заявки
 func (h *ApplicationHandler) SubmitApplication(c *gin.Context) {
-	var app models.Application
-	if err := c.ShouldBindJSON(&app); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Неверный формат данных: " + err.Error(),
-		})
-		return
+	app := models.Application{
+		RouteName: c.PostForm("route_name"),
+		Email:     c.PostForm("email"),
+		Comment:   c.PostForm("comment"),
 	}
 
 	// Валидация
 	if app.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Email обязателен",
-		})
-		return
-	}
-	if app.RouteName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Название маршрута обязательно",
-		})
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		c.String(http.StatusBadRequest, `<div class="status-error">Email обязателен</div>`)
 		return
 	}
 
@@ -48,30 +40,31 @@ func (h *ApplicationHandler) SubmitApplication(c *gin.Context) {
 	adminEmail := config.Get("APPLICATION_ADMIN_EMAIL", "")
 	if adminEmail == "" {
 		log.Printf("APPLICATION_ADMIN_EMAIL не настроен")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Сервис заявок временно недоступен",
-		})
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		c.String(http.StatusInternalServerError, `<div class="status-error">Сервис заявок временно недоступен</div>`)
 		return
 	}
 
 	// Отправляем письмо админу
-	if err := h.emailSvc.SendApplicationToAdmin(adminEmail, app.RouteName, app.Email, app.Comment); err != nil {
+	routeName := app.RouteName
+	if routeName == "" {
+		routeName = "Не указан"
+	}
+	if err := h.emailSvc.SendApplicationToAdmin(adminEmail, routeName, app.Email, app.Comment); err != nil {
 		log.Printf("Ошибка отправки заявки админу: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Ошибка отправки заявки",
-		})
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		c.String(http.StatusInternalServerError, `<div class="status-error">Ошибка отправки заявки</div>`)
 		return
 	}
 
 	// Отправляем подтверждение клиенту
-	if err := h.emailSvc.SendApplicationConfirmation(app.Email, app.RouteName); err != nil {
+	if err := h.emailSvc.SendApplicationConfirmation(app.Email, routeName); err != nil {
 		log.Printf("Ошибка отправки подтверждения клиенту: %v", err)
 		// Не фейлим запрос, т.к. админ уже получил заявку
 	}
 
-	log.Printf("Заявка на маршрут '%s' отправлена от %s", app.RouteName, app.Email)
+	log.Printf("Заявка отправлена от %s (маршрут: %s)", app.Email, routeName)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Заявка успешно отправлена",
-	})
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(http.StatusOK, fmt.Sprintf(`<div class="status-success">Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.</div>`))
 }

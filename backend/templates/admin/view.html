@@ -182,6 +182,9 @@
                         {{end}}
                         <td style="text-align:center; white-space:nowrap;">
                             <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}" class="action-link">Редактировать</a>
+                            {{if eq $.TableName "places"}}
+                            <button onclick="openUploadModal({{index $row 0}})" class="action-link" style="background:none; border:none; cursor:pointer;">Загрузить фото</button>
+                            {{end}}
                             <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}" style="display:inline;" onsubmit="return confirm('Удалить запись?')">
                                 <button type="submit" class="btn-del">Удалить</button>
                             </form>
@@ -217,5 +220,101 @@
         {{end}}
     </div>
 </div>
+
+<!-- Модальное окно для загрузки фото -->
+<div id="uploadModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#141414; border:1px solid #2a2a2a; border-radius:14px; padding:30px; max-width:500px; width:90%;">
+        <h3 style="color:#fff; margin:0 0 20px; font-size:18px; text-transform:uppercase; letter-spacing:1px;">Загрузить фото</h3>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="hidden" id="uploadPlaceId" name="place_id">
+            <div style="margin-bottom:20px;">
+                <label style="display:block; color:#888; font-size:13px; margin-bottom:8px;">Выберите изображение:</label>
+                <input type="file" id="imageFile" name="image" accept="image/*" required
+                       style="width:100%; padding:12px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:8px; color:#fff;">
+            </div>
+            <div id="uploadStatus" style="margin-bottom:15px; font-size:13px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button type="submit" id="uploadBtn"
+                        style="flex:1; padding:12px; background:linear-gradient(135deg,#ff40d0,#d600a0); border:none; border-radius:10px; color:#fff; font-weight:600; cursor:pointer;">
+                    Загрузить
+                </button>
+                <button type="button" onclick="closeUploadModal()"
+                        style="flex:1; padding:12px; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:10px; color:#fff; font-weight:600; cursor:pointer;">
+                    Отмена
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openUploadModal(placeId) {
+    document.getElementById('uploadPlaceId').value = placeId;
+    document.getElementById('uploadModal').style.display = 'flex';
+    document.getElementById('uploadStatus').textContent = '';
+    document.getElementById('imageFile').value = '';
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').style.display = 'none';
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const placeId = document.getElementById('uploadPlaceId').value;
+    const fileInput = document.getElementById('imageFile');
+    const status = document.getElementById('uploadStatus');
+    const btn = document.getElementById('uploadBtn');
+    
+    if (!fileInput.files[0]) {
+        status.textContent = '❌ Выберите файл';
+        status.style.color = '#ff6b6b';
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+    
+    btn.disabled = true;
+    btn.textContent = 'Загрузка...';
+    status.textContent = '⏳ Загрузка файла...';
+    status.style.color = '#888';
+    
+    try {
+        const response = await fetch(`/places/${placeId}/images`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            status.textContent = '✅ ' + result.message;
+            status.style.color = '#4ade80';
+            setTimeout(() => {
+                closeUploadModal();
+                location.reload();
+            }, 1500);
+        } else {
+            status.textContent = '❌ ' + (result.error || 'Ошибка загрузки');
+            status.style.color = '#ff6b6b';
+        }
+    } catch (err) {
+        status.textContent = '❌ Ошибка сети: ' + err.message;
+        status.style.color = '#ff6b6b';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Загрузить';
+    }
+});
+
+// Закрытие по клику вне окна
+document.getElementById('uploadModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeUploadModal();
+    }
+});
+</script>
 {{end}}
 

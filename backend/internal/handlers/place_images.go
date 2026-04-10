@@ -70,6 +70,11 @@ func (h *PlaceImageHandler) UploadImage(c *gin.Context) {
 		return
 	}
 
+	// Устанавливаем права 644 для доступа nginx
+	if err := os.Chmod(dst, 0644); err != nil {
+		log.Printf("Предупреждение: не удалось изменить права файла %s: %v", filename, err)
+	}
+
 	// Записываем в БД
 	img := &models.PlaceImage{
 		PlaceID:  placeID,
