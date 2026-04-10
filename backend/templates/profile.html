@@ -1,28 +1,223 @@
 {{define "content"}}
-<div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-8 tracking-widest">ПРОФИЛЬ</h1>
+<style>
+    :root {
+        --bg-dark: #0a0a0a;
+        --card-bg: #141414;
+        --border-color: #333333;
+        --accent: #ff40d0;
+        --green: #00ff88;
+        --text-primary: #ffffff;
+        --text-secondary: #aaaaaa;
+    }
+
+    .profile-wrapper {
+        max-width: 800px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+
+    .profile-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .profile-title {
+        font-size: clamp(32px, 5vw, 42px);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-primary);
+    }
+
+    /* Карточка профиля */
+    .profile-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 30px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        transition: border-color 0.3s ease;
+    }
+
+    .profile-card:hover {
+        border-color: #444;
+    }
+
+    .avatar-box {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, #ff40d0 0%, #d600a0 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 8px 24px rgba(255, 64, 208, 0.25);
+    }
+
+    .avatar-box svg {
+        width: 32px;
+        height: 32px;
+        color: #fff;
+    }
+
+    .profile-details {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .user-email {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        word-break: break-all;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        width: fit-content;
+    }
+
+    .status-verified {
+        background: rgba(0, 255, 136, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .status-unverified {
+        background: rgba(255, 64, 208, 0.12);
+        color: var(--accent);
+        border: 1px solid rgba(255, 64, 208, 0.3);
+    }
+
+    /* Секция сохранённых маршрутов */
+    .saved-section {
+        margin-top: 40px;
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+    }
+
+    .empty-state {
+        background: var(--card-bg);
+        border: 2px dashed var(--border-color);
+        border-radius: 24px;
+        padding: 40px 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .empty-state-icon {
+        color: #555;
+        margin-bottom: 16px;
+    }
+
+    .empty-state-text {
+        color: var(--text-secondary);
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 24px;
+        line-height: 1.6;
+    }
+
+    .btn-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #ff40d0 0%, #d600a0 100%);
+        color: #fff;
+        padding: 16px 32px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(255, 64, 208, 0.35);
+    }
+
+    @media (max-width: 600px) {
+        .profile-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 24px;
+        }
+        .status-badge { margin: 0 auto; }
+        .profile-wrapper { margin: 40px auto; }
+    }
+</style>
+
+<div class="profile-wrapper">
+    <header class="profile-header">
+        <h1 class="profile-title">Профиль</h1>
+    </header>
 
     <!-- Карточка профиля -->
-    <div class="bg-t2-white text-t2-black border-2 border-t2-black p-6 mb-6">
-        <div class="flex items-center gap-4 mb-6">
-            <div>
-                <h2 class="text-xl font-semibold tracking-wider">{{.Email}}</h2>
-                <span class="inline-block mt-1 px-3 py-1 text-sm font-bold tracking-wider {{if .IsVerified}}bg-t2-black text-t2-white{{else}}bg-t2-magenta text-t2-white{{end}}">
-                    {{if .IsVerified}}ПОДТВЕРЖДЁН{{else}}НЕ ПОДТВЕРЖДЁН{{end}}
-                </span>
-            </div>
+    <div class="profile-card">
+        <div class="avatar-box">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+        </div>
+        <div class="profile-details">
+            <h2 class="user-email">{{.Email}}</h2>
+            <span class="status-badge {{if .IsVerified}}status-verified{{else}}status-unverified{{end}}">
+                {{if .IsVerified}}
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                    Подтверждён
+                {{else}}
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Не подтверждён
+                {{end}}
+            </span>
         </div>
     </div>
 
-    <!-- Секция сохранённых маршрутов (заглушка на будущее) -->
-    <div class="bg-t2-white text-t2-black border-2 border-t2-black p-6">
-        <h2 class="text-xl font-semibold mb-4 tracking-wider">СОХРАНЁННЫЕ МАРШРУТЫ</h2>
-        <div class="text-center py-8">
-            <p class="text-sm tracking-wider">У ВАС ПОКА НЕТ СОХРАНЁННЫХ МАРШРУТОВ</p>
-            <a href="/" class="inline-block mt-4 text-t2-magenta hover:text-t2-black underline tracking-wider text-sm">
-                СОЗДАТЬ ПЕРВЫЙ МАРШРУТ
+    <!-- Секция сохранённых маршрутов -->
+    <div class="saved-section">
+        <h2 class="section-title">Сохранённые маршруты</h2>
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+            </div>
+            <p class="empty-state-text">У вас пока нет сохранённых маршрутов.<br>Создайте первый, чтобы начать путешествие!</p>
+            <a href="/#generate" class="btn-create">
+                Создать маршрут
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
             </a>
         </div>
     </div>
 </div>
 {{end}}
+

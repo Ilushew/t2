@@ -5,71 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
 
-    <!-- Google Fonts: Montserrat (аналог T2 Halvar Breit) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Fontsource: Inter (Замена Google Fonts) -->
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5/index.css" rel="stylesheet">
 
-    <!-- Tailwind CSS (стили) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- T2 Brand Colors -->
     <script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    't2-black': '#000000',
-                    't2-white': '#FFFFFF',
-                    't2-magenta': '#FF3495',
-                    't2-green': '#A7FC00',
-                    't2-blue': '#00BFFF',
-                },
-                fontFamily: {
-                    sans: ['Montserrat', 'system-ui', 'sans-serif'],
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: '#0a0a0a',
+                        card: '#141414',
+                        accent: '#ff40d0',
+                        accentDark: '#d600a0',
+                    }
                 }
             }
         }
-    }
     </script>
 
-    <!-- HTMX (динамика) -->
+    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 
-    <!-- Leaflet (карта) -->
+    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Глобальные стили для соответствия темной теме -->
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --text-primary: #ffffff;
+            --accent: #ff40d0;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body class="bg-t2-white text-t2-black flex flex-col min-h-screen font-sans">
+<body class="flex flex-col min-h-screen m-0 p-0">
 
     <!-- Шапка -->
-    <header class="bg-t2-black text-t2-white border-b-2 border-t2-magenta p-4 shadow">
-        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-            <h1 class="text-xl font-bold tracking-widest">
-                МАРШРУТЫ ПО УДМУРТИИ
+    <header class="bg-[#0a0a0a] text-white border-b border-[#333] sticky top-0 z-50">
+        <div class="max-w-[1400px] mx-auto px-5 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <h1 class="text-xl font-bold tracking-widest uppercase hover:text-accent transition cursor-pointer">
+                <a href="/" class="no-underline text-white hover:text-accent">Маршруты по Удмуртии</a>
             </h1>
-            <div>
+            
+            <nav class="flex items-center gap-4">
                 {{if .IsAuthenticated}}
-                    <a href="/profile" class="mr-0 sm:mr-4 mb-2 sm:mb-0 inline-block hover:text-t2-magenta transition">{{.Email}}</a>
+                    <a href="/profile" class="text-sm font-medium text-gray-300 hover:text-accent transition">
+                        {{.Email}}
+                    </a>
                     <a href="/auth/logout"
-                       class="border border-t2-black text-t2-black hover:bg-t2-magenta hover:text-t2-white hover:border-t2-magenta px-4 py-2 rounded-none transition text-center block sm:inline-block text-sm tracking-wider">
-                        ВЫЙТИ
+                       class="text-sm font-bold uppercase tracking-wider border border-accent/50 px-4 py-2 rounded-full text-accent hover:bg-accent hover:text-white transition">
+                        Выйти
                     </a>
                 {{else}}
                     <a href="/auth/register"
-                       class="bg-t2-black text-t2-white hover:bg-t2-magenta px-4 py-2 rounded-none transition text-center block sm:inline-block text-sm tracking-wider font-bold">
-                        ВОЙТИ
+                       class="text-sm font-bold uppercase tracking-wider bg-accent/10 border border-accent px-5 py-2 rounded-full text-accent hover:bg-accent hover:text-white transition">
+                        Войти
                     </a>
                 {{end}}
-            </div>
+            </nav>
         </div>
     </header>
 
-    <!-- Основной контент -->
-    <main class="flex-grow container mx-auto p-4">
+    <!-- Основной контент (без контейнера, чтобы секции могли быть на всю ширину) -->
+    <main class="flex-grow w-full">
         {{template "content" .}}
     </main>
 
+    <!-- Скрипт для плавного скролла, если нужно -->
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                const targetElement = document.querySelector(targetId);
+                if(targetElement){
+                    e.preventDefault();
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

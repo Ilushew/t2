@@ -83,19 +83,19 @@ func (h *AuthHandler) VerifyCode(c *gin.Context) {
 
 	user, err := h.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		c.HTML(http.StatusOK, errorTemplatePath, gin.H{"message": "Неверный email"})
+		c.HTML(http.StatusOK, "verify", gin.H{"email": email, "error": "Пользователь не найден"})
 		return
 	}
 
 	err = h.codeSvc.VerifyCode(ctx, user.ID.String(), code)
 	if err != nil {
-		c.HTML(http.StatusOK, errorTemplatePath, gin.H{"message": "Неверный или истёкший код"})
+		c.HTML(http.StatusOK, "verify", gin.H{"email": email, "error": "Неверный или истёкший код"})
 		return
 	}
 
 	err = h.userRepo.MarkVerified(ctx, user.ID)
 	if err != nil {
-		c.HTML(http.StatusOK, errorTemplatePath, gin.H{"message": "Ошибка обновления статуса"})
+		c.HTML(http.StatusOK, "verify", gin.H{"email": email, "error": "Ошибка верификации"})
 		return
 	}
 
@@ -104,7 +104,7 @@ func (h *AuthHandler) VerifyCode(c *gin.Context) {
 	session.Set("email", user.Email)
 	err = session.Save()
 	if err != nil {
-		c.HTML(http.StatusOK, errorTemplatePath, gin.H{"message": "Ошибка создания сессии"})
+		c.HTML(http.StatusOK, "verify", gin.H{"email": email, "error": "Ошибка создания сессии"})
 		return
 	}
 	c.Header("HX-Redirect", "/")

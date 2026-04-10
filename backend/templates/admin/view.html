@@ -1,86 +1,221 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="container mx-auto p-4 max-w-6xl">
-    <h1 class="text-2xl font-bold mb-4 tracking-widest">{{.Title}}</h1>
+<style>
+    .admin-wrapper {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: #ffffff;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+    .admin-top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #2a2a2a;
+    }
+    .admin-title {
+        font-size: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0;
+    }
+    .admin-back {
+        color: #888;
+        font-size: 13px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+        display: inline-block;
+        margin-top: 4px;
+    }
+    .admin-back:hover { color: #ff40d0; }
+    .btn-add {
+        background: linear-gradient(135deg, #ff40d0, #d600a0);
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+    .btn-add:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(255,64,208,0.3); }
 
-    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <a href="/admin" class="text-t2-magenta hover:text-t2-black tracking-wider text-sm">← К ТАБЛИЦАМ</a>
-        <a href="/admin/table/{{.TableName}}/create"
-           class="bg-t2-black text-t2-white hover:bg-t2-magenta font-bold py-2 px-4 rounded-none transition text-sm tracking-wider">
-            + ДОБАВИТЬ ЗАПИСЬ
-        </a>
+    .table-wrap {
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 14px;
+        overflow-x: auto;
+    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; }
+    .data-table th {
+        background: #1a1a1a;
+        color: #888;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid #2a2a2a;
+        white-space: nowrap;
+    }
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #222;
+        color: #e0e0e0;
+        vertical-align: middle;
+    }
+    .data-table tr:hover td { background: #1c1c1c; }
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .action-link {
+        color: #ff40d0;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 10px;
+        border-radius: 6px;
+        transition: background 0.2s;
+        display: inline-block;
+    }
+    .action-link:hover { background: rgba(255,64,208,0.1); }
+    .btn-del {
+        color: #ff6b6b;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 10px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+    .btn-del:hover { background: rgba(255,107,107,0.1); }
+
+    /* Mobile */
+    .mobile-list { display: flex; flex-direction: column; gap: 12px; }
+    .m-card {
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 14px;
+        padding: 16px;
+    }
+    .m-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #222;
+        font-size: 14px;
+    }
+    .m-row:last-of-type { border-bottom: none; }
+    .m-label { color: #666; font-size: 12px; text-transform: uppercase; font-weight: 600; margin-right: 12px; }
+    .m-val { color: #fff; text-align: right; word-break: break-all; }
+    .m-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .m-btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #2a2a2a;
+        background: #1a1a1a;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .m-btn:hover { border-color: #ff40d0; color: #ff40d0; }
+    .m-btn.del { color: #ff6b6b; }
+    .m-btn.del:hover { border-color: #ff6b6b; background: rgba(255,107,107,0.08); }
+    .empty-box { text-align: center; padding: 40px 20px; color: #555; background: #141414; border: 1px dashed #2a2a2a; border-radius: 14px; font-size: 14px; }
+
+    @media (min-width: 640px) {
+        .mobile-only { display: none !important; }
+    }
+    @media (max-width: 639px) {
+        .desktop-only { display: none !important; }
+        .admin-top { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+
+<div class="admin-wrapper">
+    <div class="admin-top">
+        <div>
+            <h1 class="admin-title">{{.Title}}</h1>
+            <a href="/admin" class="admin-back">← К таблицам</a>
+        </div>
+        <a href="/admin/table/{{.TableName}}/create" class="btn-add">+ Добавить запись</a>
     </div>
 
-    <!-- Таблица (десктоп) — скрываем на мобилке -->
-    <div class="hidden sm:block overflow-x-auto bg-t2-white border-2 border-t2-black">
-        <table class="w-full border-collapse">
-            <thead>
-                <tr class="border-b-2 border-t2-black">
-                    {{range .Columns}}
-                    <th class="border-b border-t2-black p-2 text-left text-sm font-bold tracking-wider">{{.Name}}</th>
+    <!-- Desktop Table -->
+    <div class="desktop-only">
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        {{range .Columns}}
+                        <th>{{.Name}}</th>
+                        {{end}}
+                        <th style="text-align:center;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $idx, $row := .Rows}}
+                    <tr>
+                        {{range $j, $col := $.Columns}}
+                        <td>{{index $row $j}}</td>
+                        {{end}}
+                        <td style="text-align:center; white-space:nowrap;">
+                            <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}" class="action-link">Редактировать</a>
+                            <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}" style="display:inline;" onsubmit="return confirm('Удалить запись?')">
+                                <button type="submit" class="btn-del">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr><td colspan="99" class="empty-box" style="border:none; background:transparent;">Нет записей</td></tr>
                     {{end}}
-                    <th class="border-b border-t2-black p-2 text-center text-sm font-bold tracking-wider">ДЕЙСТВИЯ</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range $idx, $row := .Rows}}
-                <tr class="border-b border-t2-black hover:bg-gray-50 transition">
-                    {{range $j, $col := $.Columns}}
-                    <td class="border-b border-t2-black p-2 text-sm">{{index $row $j}}</td>
-                    {{end}}
-                    <td class="border-b border-t2-black p-2 text-center">
-                        <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}"
-                           class="text-t2-magenta hover:text-t2-black tracking-wider text-sm mr-2">
-                            РЕДАКТИРОВАТЬ
-                        </a>
-                        <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}"
-                              style="display:inline;"
-                              onsubmit="return confirm('УДАЛИТЬ ЗАПИСЬ?')">
-                            <button type="submit"
-                                    class="text-t2-magenta hover:text-t2-black tracking-wider text-sm">
-                                УДАЛИТЬ
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {{else}}
-                <tr>
-                    <td class="p-4 text-center text-sm tracking-wider" colspan="99">НЕТ ЗАПИСЕЙ</td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Карточки (мобилка) — скрываем на десктопе -->
-    <div class="sm:hidden space-y-3">
+    <!-- Mobile Cards -->
+    <div class="mobile-only mobile-list">
         {{range $idx, $row := .Rows}}
-        <div class="bg-t2-white border-2 border-t2-black p-4">
+        <div class="m-card">
             {{range $j, $col := $.Columns}}
-            <div class="mb-2">
-                <span class="font-bold text-sm tracking-wider">{{$col.Name}}:</span>
-                <span class="text-sm ml-1">{{index $row $j}}</span>
+            <div class="m-row">
+                <span class="m-label">{{$col.Name}}</span>
+                <span class="m-val">{{index $row $j}}</span>
             </div>
             {{end}}
-            <div class="flex gap-3 mt-3 pt-3 border-t-2 border-t2-black">
-                <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}"
-                   class="text-t2-magenta hover:text-t2-black tracking-wider text-sm py-2 px-4 flex-1 text-center border-2 border-t2-black">
-                    РЕДАКТИРОВАТЬ
-                </a>
-                <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}"
-                      class="flex-1"
-                      onsubmit="return confirm('УДАЛИТЬ ЗАПИСЬ?')">
-                    <button type="submit"
-                            class="text-t2-magenta hover:text-t2-black tracking-wider text-sm py-2 px-4 w-full border-2 border-t2-black">
-                        УДАЛИТЬ
-                    </button>
+            <div class="m-actions">
+                <a href="/admin/table/{{$.TableName}}/edit/{{index $row 0}}" class="m-btn">Редактировать</a>
+                <form method="POST" action="/admin/table/{{$.TableName}}/delete/{{index $row 0}}" style="flex:1;" onsubmit="return confirm('Удалить запись?')">
+                    <button type="submit" class="m-btn del">Удалить</button>
                 </form>
             </div>
         </div>
         {{else}}
-        <p class="text-center text-sm tracking-wider py-8">НЕТ ЗАПИСЕЙ</p>
+        <div class="empty-box">Нет записей</div>
         {{end}}
     </div>
 </div>
 {{end}}
+

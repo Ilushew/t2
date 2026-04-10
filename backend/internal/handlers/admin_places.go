@@ -132,6 +132,7 @@ func (h *AdminHandler) editPlaceGet(c *gin.Context) {
 			"with_pets":         fmt.Sprintf("%v", place.WithPets),
 			"description":       place.Description,
 		},
+		"Place": place,
 	}))
 }
 
@@ -149,6 +150,13 @@ func (h *AdminHandler) editPlacePost(c *gin.Context) {
 		return
 	}
 
+	// Парсим координаты
+	var latStart, lonStart, latEnd, lonEnd float64
+	fmt.Sscanf(c.PostForm("lat_start"), "%f", &latStart)
+	fmt.Sscanf(c.PostForm("lon_start"), "%f", &lonStart)
+	fmt.Sscanf(c.PostForm("lat_end"), "%f", &latEnd)
+	fmt.Sscanf(c.PostForm("lon_end"), "%f", &lonEnd)
+
 	err = h.placeRepo.UpdatePlace(c.Request.Context(), id, map[string]any{
 		"name":              c.PostForm("name"),
 		"price":             c.PostForm("price"),
@@ -159,6 +167,10 @@ func (h *AdminHandler) editPlacePost(c *gin.Context) {
 		"is_indoor":         c.PostForm("is_indoor") == "true",
 		"with_child":        c.PostForm("with_child") == "true",
 		"with_pets":         c.PostForm("with_pets") == "true",
+		"lat_start":         latStart,
+		"lon_start":         lonStart,
+		"lat_end":           latEnd,
+		"lon_end":           lonEnd,
 	})
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "admin-error", h.aH(c, gin.H{"message": err.Error()}))

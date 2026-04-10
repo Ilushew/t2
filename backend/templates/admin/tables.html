@@ -1,21 +1,126 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="container mx-auto p-4 max-w-4xl">
-    <h1 class="text-2xl sm:text-3xl font-bold mb-6 tracking-widest">АДМИН-ПАНЕЛЬ</h1>
-    <p class="text-sm tracking-wider mb-4">ВЫБЕРИТЕ ТАБЛИЦУ:</p>
+<style>
+    .admin-wrapper {
+        max-width: 600px;
+        margin: 60px auto;
+        padding: 0 20px;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
-    <div class="grid gap-3">
+    .admin-header {
+        margin-bottom: 32px;
+        border-bottom: 1px solid #222;
+        padding-bottom: 20px;
+    }
+
+    .admin-title {
+        font-size: 22px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #ffffff;
+        margin: 0 0 6px;
+    }
+
+    .admin-subtitle {
+        font-size: 13px;
+        color: #888888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .table-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .table-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        text-decoration: none;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+
+    .table-link:hover {
+        border-color: #ff40d0;
+        background: #1a1a1a;
+    }
+
+    .table-link .arrow {
+        color: #555555;
+        transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .table-link:hover .arrow {
+        color: #ff40d0;
+        transform: translateX(4px);
+    }
+
+    .empty-state {
+        padding: 24px;
+        text-align: center;
+        color: #666666;
+        background: #141414;
+        border: 1px dashed #2a2a2a;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 32px;
+        color: #888888;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: #ff40d0;
+    }
+
+    @media (max-width: 480px) {
+        .admin-wrapper { margin: 40px auto; }
+        .admin-title { font-size: 18px; }
+    }
+</style>
+
+<div class="admin-wrapper">
+    <div class="admin-header">
+        <h1 class="admin-title">Админ-панель</h1>
+        <p class="admin-subtitle">Выберите таблицу для управления</p>
+    </div>
+
+    <div class="table-list">
         {{range .Tables}}
-        <a href="/admin/table/{{.}}"
-           class="block bg-t2-white border-2 border-t2-black hover:border-t2-magenta p-4 text-center text-lg tracking-wider transition">
-             {{.}}
+        <a href="/admin/table/{{.}}" class="table-link">
+            {{.}}
+            <span class="arrow">→</span>
         </a>
         {{else}}
-        <p class="text-sm tracking-wider">НЕТ ТАБЛИЦ</p>
+        <div class="empty-state">Нет доступных таблиц</div>
         {{end}}
     </div>
 
-    <a href="/" class="mt-6 inline-block text-t2-magenta hover:text-t2-black tracking-wider text-sm">← НА ГЛАВНУЮ</a>
+    <a href="/" class="back-link">← На главную</a>
 </div>
 {{end}}
+

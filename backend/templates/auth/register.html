@@ -1,28 +1,160 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full bg-t2-white text-t2-black border-2 border-t2-black p-8">
-        <h2 class="text-2xl font-bold text-center mb-6 tracking-widest">ВХОД</h2>
-            <div id="auth-form">
-                <form hx-post="/auth/register"
-                    hx-target="#auth-form"
-                    hx-swap="outerHTML"
-                    class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold tracking-wider">EMAIL</label>
-                        <input type="email"
-                            name="email"
-                            placeholder="your@email.com"
-                            required
-                            class="mt-1 w-full px-4 py-2 border-2 border-t2-black bg-t2-white text-t2-black rounded-none">
-                    </div>
-                    <button type="submit"
-                            class="w-full bg-t2-black text-t2-white py-2 px-4 rounded-none hover:bg-t2-magenta transition font-bold tracking-wider text-sm">
-                        ПОЛУЧИТЬ КОД
-                    </button>
-                </form>
-            </div>
+<style>
+    :root {
+        --bg-dark: #0a0a0a;
+        --card-bg: #141414;
+        --border-color: #333333;
+        --border-focus: #ff40d0;
+        --text-primary: #ffffff;
+        --text-secondary: #aaaaaa;
+        --accent: #ff40d0;
+        --accent-gradient: linear-gradient(135deg, #ff40d0 0%, #d600a0 100%);
+    }
+
+    .auth-page {
+        min-height: calc(100vh - 80px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: var(--bg-dark);
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 440px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 40px 32px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .auth-title {
+        font-size: clamp(26px, 5vw, 32px);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-primary);
+        margin: 0 0 8px;
+    }
+
+    .auth-subtitle {
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .form-group { margin-bottom: 24px; }
+
+    .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        background: #1e1e1e;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .form-input::placeholder { color: #666; }
+
+    .form-input:focus {
+        border-color: var(--border-focus);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(255, 64, 208, 0.15);
+        background: #252525;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: var(--accent-gradient);
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(255, 64, 208, 0.35);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    /* HTMX loading state */
+    form.htmx-request .btn-submit {
+        opacity: 0.7;
+        pointer-events: none;
+        cursor: wait;
+    }
+
+    @media (max-width: 480px) {
+        .auth-card { padding: 28px 20px; }
+    }
+</style>
+
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2 class="auth-title">Вход</h2>
+        </div>
+
+        <div id="auth-form">
+            <form hx-post="/auth/register"
+                  hx-target="#auth-form"
+                  hx-swap="outerHTML">
+                <div class="form-group">
+                    <label class="form-label" for="email-field">Email</label>
+                    <input type="email"
+                           id="email-field"
+                           name="email"
+                           placeholder="your@email.com"
+                           required
+                           class="form-input">
+                </div>
+                <button type="submit" class="btn-submit">
+                    Получить код
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 {{end}}
+

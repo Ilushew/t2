@@ -1,33 +1,166 @@
 {{template "base.html" .}}
 
 {{define "content"}}
-<div class="container mx-auto p-4 max-w-2xl">
-    <h1 class="text-2xl font-bold mb-4 tracking-widest">{{.Title}}</h1>
+<style>
+    .admin-form-wrapper {
+        max-width: 480px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: #ffffff;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
-    <div class="mb-4">
-        <a href="/admin/table/{{.TableName}}" class="text-t2-magenta hover:text-t2-white tracking-wider text-sm">← К ТАБЛИЦЕ</a>
+    .form-header {
+        margin-bottom: 24px;
+    }
+
+    .form-title {
+        font-size: 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 0 8px;
+        color: #ffffff;
+    }
+
+    .form-back {
+        color: #888888;
+        font-size: 13px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+        display: inline-block;
+    }
+
+    .form-back:hover {
+        color: #ff40d0;
+    }
+
+    .form-card {
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        padding: 28px 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group:last-of-type {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #aaaaaa;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        background: #1e1e1e;
+        border: 2px solid #333333;
+        border-radius: 10px;
+        color: #ffffff;
+        font-size: 15px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+
+    .form-input::placeholder { color: #555555; }
+
+    .form-input:focus {
+        border-color: #ff40d0;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 64, 208, 0.15);
+        background: #252525;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #ff40d0;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .checkbox-group span {
+        font-size: 14px;
+        font-weight: 500;
+        color: #e0e0e0;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #ff40d0 0%, #d600a0 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(255, 64, 208, 0.3);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    @media (max-width: 480px) {
+        .admin-form-wrapper { margin: 30px auto; }
+        .form-card { padding: 24px 18px; }
+    }
+</style>
+
+<div class="admin-form-wrapper">
+    <div class="form-header">
+        <h1 class="form-title">{{.Title}}</h1>
+        <a href="/admin/table/{{.TableName}}" class="form-back">← К таблице</a>
     </div>
 
-    <form method="POST" class="bg-t2-white text-t2-black p-4 sm:p-6 rounded-none border-2 border-t2-magenta">
-        <div class="mb-4">
-            <label class="block font-bold mb-1 tracking-wider text-sm">EMAIL</label>
-            <input type="email" name="email" required
-                   class="w-full border-2 border-t2-black bg-t2-white text-t2-black rounded-none p-3 text-base" />
+    <form method="POST" class="form-card">
+        <div class="form-group">
+            <label class="form-label" for="email-field">Email</label>
+            <input type="email" id="email-field" name="email" required class="form-input" placeholder="user@example.com">
         </div>
-        <div class="mb-4 flex items-center gap-3">
-            <input type="checkbox" name="is_verified" id="is_verified"
-                   class="w-5 h-5 accent-t2-magenta" />
-            <label for="is_verified" class="tracking-wider text-sm">ВЕРИФИЦИРОВАН</label>
+
+        <div class="form-group">
+            <label class="checkbox-group">
+                <input type="checkbox" name="is_verified" id="is_verified-field">
+                <span>Верифицирован</span>
+            </label>
         </div>
-        <div class="mb-6 flex items-center gap-3">
-            <input type="checkbox" name="is_admin" id="is_admin"
-                   class="w-5 h-5 accent-t2-magenta" />
-            <label for="is_admin" class="tracking-wider text-sm">АДМИН</label>
+
+        <div class="form-group">
+            <label class="checkbox-group">
+                <input type="checkbox" name="is_admin" id="is_admin-field">
+                <span>Администратор</span>
+            </label>
         </div>
-        <button type="submit"
-                class="w-full sm:w-auto bg-t2-black hover:bg-t2-magenta text-t2-white font-bold py-3 px-6 rounded-none transition tracking-wider text-sm">
-            СОЗДАТЬ
-        </button>
+
+        <button type="submit" class="btn-submit">Создать</button>
     </form>
 </div>
 {{end}}
+
