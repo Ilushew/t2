@@ -1,18 +1,462 @@
-<div id="route-result" class="space-y-4">
-    {{range .places}}
-    <div class="bg-t2-white text-t2-black p-4 border-2 border-t2-black hover:border-t2-magenta transition">
-        <h3 class="text-xl font-bold tracking-wider">{{.Name}}</h3>
-        <p class="mt-1 text-sm">{{.Description}}</p>
-        <div class="mt-2 flex items-center justify-between">
-            <span class="bg-t2-black text-t2-white text-xs px-2 py-1 tracking-wider">{{.Category}}</span>
-            <span class="text-t2-magenta font-bold">★ {{.Rating}}</span>
+<style>
+    :root {
+        --route-bg: #141414;
+        --route-border: #333333;
+        --route-border-hover: #ff40d0;
+        --route-accent: #ff40d0;
+        --route-text: #ffffff;
+        --route-text-muted: #aaaaaa;
+        --route-text-dim: #777777;
+        --route-tag-bg: #1e1e1e;
+    }
+
+    .route-result-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        animation: slideFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    @keyframes slideFadeIn {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Criteria Box */
+    .criteria-box {
+        background: rgba(255, 64, 208, 0.06);
+        border: 1px solid rgba(255, 64, 208, 0.25);
+        border-radius: 16px;
+        padding: 20px 24px;
+    }
+
+    .criteria-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--route-text);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 0 12px;
+    }
+
+    .criteria-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        font-size: 13px;
+        color: var(--route-text-muted);
+        font-weight: 500;
+    }
+
+    .criteria-tags .accent-val {
+        color: var(--route-accent);
+        font-weight: 600;
+    }
+
+    .criteria-divider { color: #444; margin: 0 4px; }
+
+    /* Route Counter */
+    .route-counter {
+        font-size: 12px;
+        color: var(--route-accent);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 4px;
+    }
+
+    /* Place Card */
+    .place-card {
+        background: var(--route-bg);
+        border: 1px solid var(--route-border);
+        border-radius: 20px;
+        padding: 28px;
+        transition: all 0.3s ease;
+    }
+
+    .place-card:hover {
+        border-color: #444;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .card-main { display: flex; align-items: center; gap: 16px; }
+
+    .card-badge {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--route-accent) 0%, #d600a0 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 800;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px rgba(255, 64, 208, 0.25);
+    }
+
+    .card-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--route-text);
+        margin: 0 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.2;
+    }
+
+    .card-category {
+        font-size: 14px;
+        color: var(--route-text-muted);
+        margin: 0;
+    }
+
+    .price-tag {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid var(--route-border);
+        color: var(--route-accent);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        align-self: flex-start;
+        margin-top: 4px;
+    }
+
+    .card-desc {
+        color: #cccccc;
+        font-size: 15px;
+        line-height: 1.6;
+        margin: 0 0 20px;
+    }
+
+    .features-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .feature-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--route-tag-bg);
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 13px;
+        color: #ddd;
+        font-weight: 500;
+    }
+
+    .coords-box {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px dashed #2a2a2a;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 12px;
+        color: var(--route-text-dim);
+        font-family: 'SF Mono', monospace;
+    }
+
+    .coord-item { display: flex; align-items: center; gap: 6px; }
+
+    /* Actions */
+    .btn-next {
+        width: 100%;
+        padding: 18px;
+        background: var(--route-bg);
+        border: 2px solid var(--route-border);
+        color: var(--route-text);
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .btn-next:hover {
+        border-color: var(--route-accent);
+        background: rgba(255, 64, 208, 0.08);
+        color: var(--route-accent);
+    }
+
+    .btn-next:active { transform: scale(0.98); }
+
+    .btn-next.htmx-request { opacity: 0.6; pointer-events: none; }
+    .btn-next .spinner { display: none; }
+    .btn-next.htmx-request .spinner { display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .all-done {
+        background: linear-gradient(135deg, var(--route-accent) 0%, #d600a0 100%);
+        color: #fff;
+        text-align: center;
+        padding: 18px;
+        border-radius: 50px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 8px;
+        box-shadow: 0 10px 30px rgba(255, 64, 208, 0.3);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 24px;
+        background: var(--route-bg);
+        border: 2px dashed var(--route-border);
+        border-radius: 20px;
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.8; }
+    .empty-msg {
+        color: var(--route-accent);
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0 0 8px;
+    }
+    .empty-sub { color: #666; font-size: 14px; margin: 0; }
+
+    @media (max-width: 600px) {
+        .place-card { padding: 20px; }
+        .card-title { font-size: 18px; }
+        .card-badge { width: 44px; height: 44px; font-size: 18px; }
+        .coords-box { flex-direction: column; gap: 8px; }
+    }
+
+    /* Image Gallery */
+    .image-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .gallery-item {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 200px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--route-border);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .gallery-item:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    .gallery-img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .image-placeholder {
+        background: var(--route-tag-bg);
+        border: 2px dashed var(--route-border);
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .placeholder-icon {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 8px;
+        opacity: 0.5;
+    }
+
+    .placeholder-text {
+        color: var(--route-text-muted);
+        font-size: 14px;
+        margin: 0;
+    }
+</style>
+
+<div id="route-result" class="route-result-wrapper">
+    <!-- Заголовок результата -->
+    {{if .criteria}}
+    <div class="criteria-box">
+        <h3 class="criteria-title">Ваш маршрут готов!</h3>
+        <div class="criteria-tags">
+            <span class="accent-val">{{.criteria.Duration}} дн.</span>
+            <span class="criteria-divider">|</span>
+            <span class="accent-val"> {{.criteria.Company}}</span>
+            <span class="criteria-divider">|</span>
+            <span class="accent-val"> {{.criteria.Budget}}</span>
+            {{if .criteria.HasCar}}
+            <span class="criteria-divider">|</span>
+            <span class="accent-val"> С авто</span>
+            {{end}}
+            {{if .criteria.WithPets}}
+            <span class="criteria-divider">|</span>
+            <span class="accent-val"> С питомцами</span>
+            {{end}}
         </div>
     </div>
-    {{else}}
-    {{if .message}}
-    <p class="text-center text-sm tracking-wider">{{.message}}</p>
-    {{else}}
-    <p class="text-center text-sm tracking-wider">МАРШРУТЫ НЕ НАЙДЕНЫ</p>
     {{end}}
+
+    <!-- Текущее место -->
+    {{if .place}}
+    <div class="route-content">
+        <!-- Счётчик -->
+        <div class="route-counter">
+            <span>Маршрут {{.placeNum}} из {{.total}}</span>
+        </div>
+
+        <!-- Карточка места -->
+        <div class="place-card">
+            <!-- Изображения -->
+            {{if .place.Images}}
+            <div class="image-gallery">
+                {{range .place.Images}}
+                <div class="gallery-item">
+                    <img src="/static/images/places/{{.Filename}}"
+                         alt="{{.Filename}}"
+                         class="gallery-img"
+                         loading="lazy">
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="image-placeholder">
+                <span class="placeholder-icon">🖼️</span>
+                <p class="placeholder-text">Изображения отсутствуют</p>
+            </div>
+            {{end}}
+
+            <div class="card-header">
+                <div class="card-main">
+                    <div class="card-badge">{{.placeNum}}</div>
+                    <div>
+                        <h3 class="card-title">{{.place.Name}}</h3>
+                        <p class="card-category">{{.place.Category}}</p>
+                    </div>
+                </div>
+                <span class="price-tag">{{.place.Price}}</span>
+            </div>
+
+            <!-- Описание -->
+            <p class="card-desc">{{.place.Description}}</p>
+
+            <!-- Характеристики -->
+            <div class="features-grid">
+                <div class="feature-item"> {{.place.Time}} ч</div>
+
+                {{if .place.IsIndoor}}
+                <div class="feature-item"> В помещении</div>
+                {{end}}
+
+                {{if .place.WithChild}}
+                <div class="feature-item"> С детьми</div>
+                {{end}}
+
+                {{if .place.WithPets}}
+                <div class="feature-item"> С питомцами</div>
+                {{end}}
+
+                <div class="feature-item"> {{.place.TypesOfMovement}}</div>
+            </div>
+
+            <!-- Координаты (если есть) -->
+            {{if and .place.LatStart .place.LonStart}}
+            <div class="coords-box">
+                <div class="coord-item"> Старт: {{.place.LatStart}}, {{.place.LonStart}}</div>
+                {{if and .place.LatEnd .place.LonEnd}}
+                <div class="coord-item"> Финиш: {{.place.LatEnd}}, {{.place.LonEnd}}</div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Кнопка "Ещё маршрут" или "Завершить" -->
+        {{if .hasMore}}
+        <button hx-get="/next-route"
+                hx-target="#route-result"
+                hx-swap="outerHTML"
+                hx-indicator="this"
+                class="btn-next">
+            <span class="spinner"></span>
+            <span> Ещё маршрут</span>
+        </button>
+        {{else}}
+        <div class="all-done"> Все маршруты просмотрены!</div>
+        <button hx-post="/criteria"
+                hx-target="#route-result"
+                hx-swap="outerHTML"
+                hx-indicator="this"
+                class="btn-next">
+            <span class="spinner"></span>
+            <span> Смотреть заново</span>
+        </button>
+        {{end}}
+    </div>
+
+    {{else}}
+    <!-- Нет результатов -->
+    <div class="empty-state">
+        <div class="empty-icon"></div>
+        {{if .message}}
+        <p class="empty-msg">{{.message}}</p>
+        {{else}}
+        <p class="empty-msg">Маршруты не найдены</p>
+        <p class="empty-sub">Попробуйте изменить критерии поиска</p>
+        {{end}}
+    </div>
     {{end}}
 </div>
+
+<script>
+    // Обновляем форму заявки текущим маршрутом после вставки
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'route-result' || evt.detail.target.id === 'result-area') {
+            {{if .place}}
+            const routeName = "{{.place.Name}}";
+            
+            // Обновляем отображение
+            const routeElement = document.getElementById('selectedRoute');
+            if (routeElement) {
+                routeElement.textContent = routeName;
+            }
+            
+            // Обновляем скрытое поле
+            const routeInput = document.getElementById('routeNameInput');
+            if (routeInput) {
+                routeInput.value = routeName;
+            }
+            {{end}}
+        }
+    });
+</script>
+

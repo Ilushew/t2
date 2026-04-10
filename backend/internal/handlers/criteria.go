@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,6 +25,13 @@ func NewCriteriaHandler(placeRepo *repository.PlaceRepository) *CriteriaHandler 
 	return &CriteriaHandler{
 		placeRepo: placeRepo,
 	}
+}
+
+// RouteState хранит состояние пагинации маршрутов
+type RouteState struct {
+	PlaceIDs []int              `json:"place_ids"`
+	Current  int                `json:"current"`
+	Criteria models.TripCriteria `json:"criteria"`
 }
 
 // HandleCriteria обрабатывает отправку формы критериев
@@ -54,14 +63,165 @@ func (h *CriteriaHandler) HandleCriteria(c *gin.Context) {
 		return
 	}
 
-	// TODO: пока заглушка — в будущем здесь будет вызов ML-сервиса
-	// ML вернёт []uuid.UUID — ID мест по убыванию релевантности
-	// places, err := h.placeRepo.GetByIDs(ctx, mlIDs)
+	// Вызываем ML-сервис для получения рекомендаций
+	mlPlaceIDs, err := callMLService(criteria)
+	if err != nil {
+		log.Printf("ML service error: %v", err)
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"message":  "Ошибка получения рекомендаций, попробуйте позже",
+			"criteria": criteria,
+		})
+		return
+	}
 
+	// Получаем места по ID от ML
+	places, err := h.placeRepo.GetByIDs(c.Request.Context(), mlPlaceIDs)
+	if err != nil {
+		log.Printf("failed to get places: %v", err)
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"message":  "Ошибка загрузки маршрутов",
+			"criteria": criteria,
+		})
+		return
+	}
+
+	// Сохраняем состояние маршрутов в cookie
+	routeState := RouteState{
+		PlaceIDs: mlPlaceIDs,
+		Current:  0,
+		Criteria: criteria,
+	}
+	setStateCookie(c, routeState)
+
+	// Возвращаем только первый маршрут
 	c.HTML(http.StatusOK, "generate", gin.H{
-		"criteria": criteria,
-		"message":  "ML-сервис пока не подключён, данные сохранены в JSON",
+		"criteria":  criteria,
+		"place":     places[0],
+		"placeNum":  1,
+		"total":     len(places),
+		"hasMore":   len(places) > 1,
 	})
+}
+
+// HandleNextRoute показывает следующий маршрут
+func (h *CriteriaHandler) HandleNextRoute(c *gin.Context) {
+	// Читаем состояние из cookie
+	routeState, err := getStateCookie(c)
+	if err != nil {
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"message": "Сессия маршрутов истекла, начните заново",
+		})
+		return
+	}
+
+	// Увеличиваем счётчик для получения СЛЕДУЮЩЕГО маршрута
+	routeState.Current++
+
+	// Проверяем, есть ли ещё маршруты
+	if routeState.Current >= len(routeState.PlaceIDs) {
+		// Все маршруты просмотрены, обновляем cookie
+		setStateCookie(c, routeState)
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"criteria": routeState.Criteria,
+			"message":  "Маршруты закончились! Попробуйте изменить критерии",
+		})
+		return
+	}
+
+	// Получаем место (Current уже увеличен — это следующий маршрут)
+	currentPlaceID := routeState.PlaceIDs[routeState.Current]
+	places, err := h.placeRepo.GetByIDs(c.Request.Context(), []int{currentPlaceID})
+	if err != nil || len(places) == 0 {
+		log.Printf("failed to get place %d: %v", currentPlaceID, err)
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"message": "Ошибка загрузки маршрута",
+		})
+		return
+	}
+
+	// Сохраняем обновлённое состояние
+	setStateCookie(c, routeState)
+
+	// Возвращаем место (placeNum = Current + 1, т.к. нумерация с 1)
+	c.HTML(http.StatusOK, "generate", gin.H{
+		"criteria": routeState.Criteria,
+		"place":    places[0],
+		"placeNum": routeState.Current + 1,
+		"total":    len(routeState.PlaceIDs),
+		"hasMore":  routeState.Current+1 < len(routeState.PlaceIDs),
+	})
+}
+
+// callMLService отправляет критерии в ML-сервис и возвращает список ID мест
+func callMLService(criteria models.TripCriteria) ([]int, error) {
+	// Формируем запрос к ML-сервису
+	mlReq := map[string]any{
+		"query":       fmt.Sprintf("%s %s %s", criteria.Duration, criteria.Company, criteria.Budget),
+		"preferences": map[string]any{
+			"budget":   criteria.Budget,
+			"company":  criteria.Company,
+			"duration": criteria.Duration,
+		},
+		"filters": map[string]any{
+			"has_car":   criteria.HasCar,
+			"with_pets": criteria.WithPets,
+			"interests": criteria.Interests,
+		},
+		"top_k": 10,
+	}
+
+	body, err := json.Marshal(mlReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Отправляем POST запрос к ml_service
+	mlURL := "http://ml_service:8000/predict"
+	resp, err := http.Post(mlURL, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to call ML service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("ML service returned status: %d", resp.StatusCode)
+	}
+
+	// Парсим ответ — массив int ID мест
+	var placeIDs []int
+	if err := json.NewDecoder(resp.Body).Decode(&placeIDs); err != nil {
+		return nil, fmt.Errorf("failed to decode ML response: %w", err)
+	}
+
+	log.Printf("ML service returned %d place IDs", len(placeIDs))
+	return placeIDs, nil
+}
+
+// setStateCookie сохраняет состояние маршрутов
+func setStateCookie(c *gin.Context, state RouteState) {
+	data, _ := json.Marshal(state)
+	encoded := base64.StdEncoding.EncodeToString(data)
+	c.SetCookie("route_state", encoded, 3600, "/", "", false, false) // 1 час
+}
+
+// getStateCookie читает состояние маршрутов
+func getStateCookie(c *gin.Context) (RouteState, error) {
+	encoded, err := c.Cookie("route_state")
+	if err != nil {
+		return RouteState{}, fmt.Errorf("cookie not found")
+	}
+
+	data, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return RouteState{}, fmt.Errorf("decode error: %w", err)
+	}
+
+	var state RouteState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return RouteState{}, fmt.Errorf("unmarshal error: %w", err)
+	}
+
+	return state, nil
 }
 
 // saveCriteriaToFile сохраняет критерии в JSON файл в папку criteria_data

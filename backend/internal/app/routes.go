@@ -83,6 +83,9 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 	// Маршрут для формы критериев (POST)
 	r.POST("/criteria", criteriaHandler.HandleCriteria)
 
+	// Показать следующий маршрут
+	r.GET("/next-route", criteriaHandler.HandleNextRoute)
+
 	// Заявка на маршрут
 	r.POST("/applications", applicationHandler.SubmitApplication)
 
