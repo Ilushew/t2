@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем только код (без модели — она скачается при старте)
 COPY server.py loader.py ./
-
+COPY places.csv .  
 EXPOSE 8000
 
 # Запуск сервера

@@ -17,14 +17,14 @@ print("✅ Модель загружена!")
 
 CACHE_FILE = "places_embeddings.pkl"
 
-places_data = [
-    {"id": 1, "name": "Музей Калашникова", "desc": "Музейно-выставочный комплекс имени Михаила Калашникова в Ижевске. Экспозиция об оружии, истории завода и биографии конструктора."},
-    {"id": 2, "name": "Этнопарк Зура", "desc": "Интерактивная площадка с удмуртской культурой, традициями, национальной кухней и ремеслами. Подходит для семей с детьми."},
-    {"id": 3, "name": "Нечкинский парк", "desc": "Национальный парк на берегу Камы. Горнолыжный курорт, лес, природа, активный отдых, лыжи зимой."},
-    {"id": 4, "name": "Свято-Михайловский собор", "desc": "Православный храм в Ижевске, памятник архитектуры, визитная карточка города, религия и история."}
-]
-df_places = pd.DataFrame(places_data)
-df_places['text_for_embed'] = df_places['name'] + ". " + df_places['desc']
+df = pd.read_csv('places.csv', encoding='utf-8')
+
+# Оставляем только нужные колонки, переименовываем и конвертируем в список словарей
+df_places = (
+    df
+    .rename(columns={'place_id': 'id', 'description': 'desc'})
+    .astype({'id': int})
+)
 
 
 if os.path.exists(CACHE_FILE):
@@ -33,7 +33,7 @@ if os.path.exists(CACHE_FILE):
         place_embeddings = pickle.load(f)
 else:
     print("⏳ Эмбеддингов нет. Генерируем...")
-    place_embeddings = model.encode(df_places['text_for_embed'].tolist(), show_progress_bar=True)
+    place_embeddings = model.encode(df_places['desc'].tolist(), show_progress_bar=True)
     
     print(f"💾 Сохраняем эмбеддинги в {CACHE_FILE}...")
     with open(CACHE_FILE, "wb") as f:
@@ -57,18 +57,17 @@ class ReccomendationModel:
 
         df_places['interest_score'] = semantic_score
         result = df_places.sort_values(by='interest_score', ascending=False).head(top_k)
-        
+        print(result[['name', 'interest_score']])
         return result[['name', 'interest_score']]
     
     def tabular_model_predict(self):
         pass
 
-    def predict(self):
-        self.embedding_model_predict("хочу чупа чупс")
-        return [5, 7, 2, 1, 6]
+    def predict(self, request):
+        pred = self.embedding_model_predict(request.query)
+        indices = pred.index.tolist()
+        return list(indices)
 
 
 
 
-mdl = ReccomendationModel()
-#print(mdl.predict())
