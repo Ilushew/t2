@@ -372,15 +372,19 @@
 
             </div>
 
-            <!-- Координаты (если есть) -->
-            {{if and .place.LatStart .place.LonStart}}
-            <div class="coords-box">
-                <div class="coord-item"> Старт: {{.place.LatStart}}, {{.place.LonStart}}</div>
-                {{if and .place.LatEnd .place.LonEnd}}
-                <div class="coord-item"> Финиш: {{.place.LatEnd}}, {{.place.LonEnd}}</div>
-                {{end}}
-            </div>
-            {{end}}
+            <!-- Яндекс Карта -->
+            <div id="route-map-{{.placeNum}}" 
+                 class="route-map-container"
+                 data-lat-start="{{.place.LatStart}}"
+                 data-lon-start="{{.place.LonStart}}"
+                 {{if and .place.LatEnd .place.LonEnd}}
+                 data-lat-end="{{.place.LatEnd}}"
+                 data-lon-end="{{.place.LonEnd}}"
+                 {{end}}
+                 data-place-num="{{.placeNum}}"
+                 data-place-name="{{.place.Name}}"
+                 data-place-name-label="{{.place.NameLabel}}"
+                 style="margin-top:16px; border-radius:16px; overflow:hidden; border:1px solid var(--route-border); height:350px;"></div>
         </div>
 
         <!-- Кнопка "Ещё маршрут" или "Завершить" -->
@@ -420,7 +424,68 @@
     {{end}}
 </div>
 
+{{if and .place.LatStart .place.LonStart}}
 <script>
+ymaps.ready(function () {
+    var start = [{{.place.LatStart}}, {{.place.LonStart}}];
+    var name = '{{if .place.NameLabel}}{{.place.NameLabel}}{{else}}{{.place.Name}}{{end}}';
+    var map = new ymaps.Map(document.getElementById('route-map-{{.placeNum}}'), {
+        center: start, zoom: 12
+    }, { suppressMapOpenBlock: true });
+
+    map.geoObjects.add(new ymaps.Placemark(start, {
+        balloonContentHeader: ' Начало маршрута',
+        balloonContentBody: name
+    }, { preset: 'islands#redCircleDotIcon' }));
+
+    {{if and .place.LatEnd .place.LonEnd}}
+    var end = [{{.place.LatEnd}}, {{.place.LonEnd}}];
+    map.geoObjects.add(new ymaps.Placemark(end, {
+        balloonContentHeader: ' Конец маршрута',
+        balloonContentBody: name
+    }, { preset: 'islands#greenCircleDotIcon' }));
+    map.setBounds(map.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+    {{end}}
+});
+</script>
+{{end}}
+
+<script>
+    // Глобальная инициализация карты (работает и при первой загрузке, и при HTMX)
+    function initRouteMap(container) {
+        if (!container || typeof ymaps === 'undefined') return;
+
+        var latStart = parseFloat(container.dataset.latStart);
+        var lonStart = parseFloat(container.dataset.lonStart);
+        var placeNum = container.dataset.placeNum;
+        var placeName = container.dataset.placeName;
+        var placeNameLabel = container.dataset.placeNameLabel;
+        var name = placeNameLabel || placeName;
+
+        if (!latStart || !lonStart) return;
+
+        var map = new ymaps.Map(container, {
+            center: [latStart, lonStart],
+            zoom: 12
+        }, { suppressMapOpenBlock: true });
+
+        map.geoObjects.add(new ymaps.Placemark([latStart, lonStart], {
+            balloonContentHeader: ' Начало маршрута',
+            balloonContentBody: name
+        }, { preset: 'islands#redCircleDotIcon' }));
+
+        var latEnd = parseFloat(container.dataset.latEnd);
+        var lonEnd = parseFloat(container.dataset.lonEnd);
+
+        if (latEnd && lonEnd) {
+            map.geoObjects.add(new ymaps.Placemark([latEnd, lonEnd], {
+                balloonContentHeader: ' Конец маршрута',
+                balloonContentBody: name
+            }, { preset: 'islands#greenCircleDotIcon' }));
+            map.setBounds(map.geoObjects.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+        }
+    }
+
     // Обновляем форму заявки текущим маршрутом после вставки
     document.addEventListener('htmx:afterSwap', function(evt) {
         if (evt.detail.target.id === 'route-result' || evt.detail.target.id === 'result-area') {
@@ -438,7 +503,21 @@
             if (routeInput) {
                 routeInput.value = routeName;
             }
+
+            // Инициализируем карту после вставки контента
+            const mapContainer = document.getElementById('route-map-{{.placeNum}}');
+            if (mapContainer && typeof ymaps !== 'undefined') {
+                initRouteMap(mapContainer);
+            }
             {{end}}
+        }
+    });
+
+    // Инициализация при первой загрузке страницы (если карта уже в DOM)
+    document.addEventListener('DOMContentLoaded', function() {
+        const mapContainer = document.querySelector('.route-map-container');
+        if (mapContainer && typeof ymaps !== 'undefined') {
+            initRouteMap(mapContainer);
         }
     });
 </script>

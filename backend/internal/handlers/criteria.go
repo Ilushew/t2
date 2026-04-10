@@ -104,11 +104,12 @@ func (h *CriteriaHandler) HandleCriteria(c *gin.Context) {
 
 	// Возвращаем только первый маршрут
 	c.HTML(http.StatusOK, "generate", gin.H{
-		"criteria":  criteria,
-		"place":     places[0],
-		"placeNum":  1,
-		"total":     len(places),
-		"hasMore":   len(places) > 1,
+		"criteria":   criteria,
+		"place":      places[0],
+		"placeNum":   1,
+		"total":      len(places),
+		"hasMore":    len(places) > 1,
+		"yandexKey":  os.Getenv("YANDEX_KEY"),
 	})
 }
 
@@ -153,11 +154,12 @@ func (h *CriteriaHandler) HandleNextRoute(c *gin.Context) {
 
 	// Возвращаем место (placeNum = Current + 1, т.к. нумерация с 1)
 	c.HTML(http.StatusOK, "generate", gin.H{
-		"criteria": routeState.Criteria,
-		"place":    places[0],
-		"placeNum": routeState.Current + 1,
-		"total":    len(routeState.PlaceIDs),
-		"hasMore":  routeState.Current+1 < len(routeState.PlaceIDs),
+		"criteria":  routeState.Criteria,
+		"place":     places[0],
+		"placeNum":  routeState.Current + 1,
+		"total":     len(routeState.PlaceIDs),
+		"hasMore":   routeState.Current+1 < len(routeState.PlaceIDs),
+		"yandexKey": os.Getenv("YANDEX_KEY"),
 	})
 }
 
