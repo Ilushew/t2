@@ -309,21 +309,6 @@
     {{if .criteria}}
     <div class="criteria-box">
         <h3 class="criteria-title">Ваш маршрут готов!</h3>
-        <div class="criteria-tags">
-            <span class="accent-val">{{.criteria.Duration}} дн.</span>
-            <span class="criteria-divider">|</span>
-            <span class="accent-val"> {{.criteria.Company}}</span>
-            <span class="criteria-divider">|</span>
-            <span class="accent-val"> {{.criteria.Budget}}</span>
-            {{if .criteria.HasCar}}
-            <span class="criteria-divider">|</span>
-            <span class="accent-val"> С авто</span>
-            {{end}}
-            {{if .criteria.WithPets}}
-            <span class="criteria-divider">|</span>
-            <span class="accent-val"> С питомцами</span>
-            {{end}}
-        </div>
     </div>
     {{end}}
 
@@ -360,15 +345,14 @@
                 <div class="card-main">
                     <div class="card-badge">{{.placeNum}}</div>
                     <div>
-                        <h3 class="card-title">{{.place.Name}}</h3>
+                        <h3 class="card-title">{{if .place.NameLabel}}{{.place.NameLabel}}{{else}}{{.place.Name}}{{end}}</h3>
                         <p class="card-category">{{.place.Category}}</p>
                     </div>
                 </div>
-                <span class="price-tag">{{.place.Price}}</span>
             </div>
 
             <!-- Описание -->
-            <p class="card-desc">{{.place.Description}}</p>
+            <p class="card-desc">{{if .place.DescriptionLabel}}{{.place.DescriptionLabel}}{{else}}{{.place.Description}}{{end}}</p>
 
             <!-- Характеристики -->
             <div class="features-grid">
@@ -386,7 +370,6 @@
                 <div class="feature-item"> С питомцами</div>
                 {{end}}
 
-                <div class="feature-item"> {{.place.TypesOfMovement}}</div>
             </div>
 
             <!-- Координаты (если есть) -->
@@ -412,7 +395,7 @@
         </button>
         {{else}}
         <div class="all-done"> Все маршруты просмотрены!</div>
-        <button hx-post="/criteria"
+        <button hx-post="/restart"
                 hx-target="#route-result"
                 hx-swap="outerHTML"
                 hx-indicator="this"
@@ -443,13 +426,13 @@
         if (evt.detail.target.id === 'route-result' || evt.detail.target.id === 'result-area') {
             {{if .place}}
             const routeName = "{{.place.Name}}";
-            
+
             // Обновляем отображение
             const routeElement = document.getElementById('selectedRoute');
             if (routeElement) {
                 routeElement.textContent = routeName;
             }
-            
+
             // Обновляем скрытое поле
             const routeInput = document.getElementById('routeNameInput');
             if (routeInput) {
@@ -459,4 +442,3 @@
         }
     });
 </script>
-

@@ -31,9 +31,9 @@ func (r *PlaceRepository) GetByIDs(ctx context.Context, ids []int) ([]models.Pla
 	}
 
 	query := `
-		SELECT id, name, price, time, types_of_movement, category,
+		SELECT id, name, name_label, price, time, types_of_movement, category,
 		       lat_start, lon_start, lat_end, lon_end,
-		       is_indoor, with_child, with_pets, description
+		       is_indoor, with_child, with_pets, description, description_label
 		FROM places
 		WHERE id = ANY($1)
 		ORDER BY array_position($1, id)
@@ -66,9 +66,9 @@ func (r *PlaceRepository) GetByIDs(ctx context.Context, ids []int) ([]models.Pla
 // GetAll возвращает все места из БД (для админки)
 func (r *PlaceRepository) GetAll(ctx context.Context) ([]models.Place, error) {
 	query, args, err := r.psq.
-		Select("id", "name", "price", "time", "types_of_movement", "category",
+		Select("id", "name", "name_label", "price", "time", "types_of_movement", "category",
 			"lat_start", "lon_start", "lat_end", "lon_end",
-			"is_indoor", "with_child", "with_pets", "description").
+			"is_indoor", "with_child", "with_pets", "description", "description_label").
 		From("places").
 		OrderBy("id").
 		ToSql()
@@ -112,6 +112,7 @@ func scanPlaces(rows pgx.Rows) ([]models.Place, error) {
 		if err := rows.Scan(
 			&p.ID,
 			&p.Name,
+			&p.NameLabel,
 			&p.Price,
 			&p.Time,
 			&p.TypesOfMovement,
@@ -124,6 +125,7 @@ func scanPlaces(rows pgx.Rows) ([]models.Place, error) {
 			&p.WithChild,
 			&p.WithPets,
 			&p.Description,
+			&p.DescriptionLabel,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan place: %w", err)
 		}
@@ -156,15 +158,15 @@ func (r *PlaceRepository) InsertPlace(ctx context.Context, place *models.Place) 
 	query, args, err := r.psq.
 		Insert("places").
 		Columns(
-			"name", "price", "time", "types_of_movement", "category",
+			"name", "name_label", "price", "time", "types_of_movement", "category",
 			"lat_start", "lon_start", "lat_end", "lon_end",
-			"is_indoor", "with_child", "with_pets", "description",
+			"is_indoor", "with_child", "with_pets", "description", "description_label",
 		).
 		Values(
-			place.Name, place.Price, place.Time,
+			place.Name, place.NameLabel, place.Price, place.Time,
 			place.TypesOfMovement, place.Category,
 			place.LatStart, place.LonStart, place.LatEnd, place.LonEnd,
-			place.IsIndoor, place.WithChild, place.WithPets, place.Description,
+			place.IsIndoor, place.WithChild, place.WithPets, place.Description, place.DescriptionLabel,
 		).
 		ToSql()
 	if err != nil {
