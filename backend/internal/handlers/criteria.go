@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,20 +37,28 @@ type RouteState struct {
 
 // HandleCriteria обрабатывает отправку формы критериев
 func (h *CriteriaHandler) HandleCriteria(c *gin.Context) {
+	// Парсим бюджет как число
+	budgetStr := c.PostForm("budget")
+	budget, err := strconv.Atoi(budgetStr)
+	if err != nil {
+		budget = 1 // по умолчанию "Средний"
+	}
+
 	// Парсим данные из формы
 	criteria := models.TripCriteria{
 		Duration: c.PostForm("duration"),
 		Company:  c.PostForm("company"),
-		Budget:   c.PostForm("budget"),
+		Budget:   budget,
+		Query:    c.PostForm("preferences"),
 	}
 
-	// Преобразуем has_car
-	hasCar := c.PostForm("has_car")
-	criteria.HasCar = hasCar == "true"
+	// Преобразуем car (yes/no -> bool)
+	hasCar := c.PostForm("car")
+	criteria.HasCar = hasCar == "yes"
 
-	// Преобразуем with_pets
-	withPets := c.PostForm("with_pets")
-	criteria.WithPets = withPets == "true"
+	// Преобразуем pets (yes/no -> bool)
+	withPets := c.PostForm("pets")
+	criteria.WithPets = withPets == "yes"
 
 	// Собираем интересы (множественный выбор)
 	criteria.Interests = c.PostFormArray("interests")
@@ -152,22 +161,70 @@ func (h *CriteriaHandler) HandleNextRoute(c *gin.Context) {
 	})
 }
 
+// HandleRestartRoutes сбрасывает счётчик и показывает маршруты заново
+func (h *CriteriaHandler) HandleRestartRoutes(c *gin.Context) {
+	// Читаем состояние из cookie
+	routeState, err := getStateCookie(c)
+	if err != nil {
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"message": "Сессия маршрутов истекла, начните заново",
+		})
+		return
+	}
+
+	// Сбрасываем счётчик на 0
+	routeState.Current = 0
+	setStateCookie(c, routeState)
+
+	// Проверяем, есть ли маршруты
+	if len(routeState.PlaceIDs) == 0 {
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"criteria": routeState.Criteria,
+			"message":  "Маршруты не найдены, попробуйте изменить критерии",
+		})
+		return
+	}
+
+	// Получаем первое место
+	firstPlaceID := routeState.PlaceIDs[0]
+	places, err := h.placeRepo.GetByIDs(c.Request.Context(), []int{firstPlaceID})
+	if err != nil || len(places) == 0 {
+		log.Printf("failed to get place %d: %v", firstPlaceID, err)
+		c.HTML(http.StatusOK, "generate", gin.H{
+			"message": "Ошибка загрузки маршрута",
+		})
+		return
+	}
+
+	// Возвращаем первый маршрут
+	c.HTML(http.StatusOK, "generate", gin.H{
+		"criteria": routeState.Criteria,
+		"place":    places[0],
+		"placeNum": 1,
+		"total":    len(routeState.PlaceIDs),
+		"hasMore":  len(routeState.PlaceIDs) > 1,
+	})
+}
+
 // callMLService отправляет критерии в ML-сервис и возвращает список ID мест
 func callMLService(criteria models.TripCriteria) ([]int, error) {
-	// Формируем запрос к ML-сервису
+	// Формируем query из всех критериев
+	queryText := fmt.Sprintf("%s %s %d %v %s %v", criteria.Duration, criteria.Company, criteria.Budget, criteria.HasCar, criteria.Interests, criteria.WithPets)
+
+	// Если есть пользовательские пожелания — добавляем их
+	if criteria.Query != "" {
+		queryText = fmt.Sprintf("%s %s", criteria.Query, queryText)
+	}
+
+	// ML-сервис ожидает плоскую структуру (как в RecommendationRequest)
 	mlReq := map[string]any{
-		"query":       fmt.Sprintf("%s %s %s", criteria.Duration, criteria.Company, criteria.Budget),
-		"preferences": map[string]any{
-			"budget":   criteria.Budget,
-			"company":  criteria.Company,
-			"duration": criteria.Duration,
-		},
-		"filters": map[string]any{
-			"has_car":   criteria.HasCar,
-			"with_pets": criteria.WithPets,
-			"interests": criteria.Interests,
-		},
-		"top_k": 10,
+		"duration":  criteria.Duration,
+		"company":   criteria.Company,
+		"has_car":   criteria.HasCar,
+		"budget":    criteria.Budget,
+		"interests": criteria.Interests,
+		"with_pets": criteria.WithPets,
+		"query":     queryText,
 	}
 
 	body, err := json.Marshal(mlReq)
@@ -193,7 +250,7 @@ func callMLService(criteria models.TripCriteria) ([]int, error) {
 		return nil, fmt.Errorf("failed to decode ML response: %w", err)
 	}
 
-	log.Printf("ML service returned %d place IDs", len(placeIDs))
+	log.Printf("ML service returned %d place IDs (query: %s)", len(placeIDs), queryText)
 	return placeIDs, nil
 }
 

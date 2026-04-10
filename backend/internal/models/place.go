@@ -3,6 +3,7 @@ package models
 type Place struct {
 	ID              int          `json:"id"`
 	Name            string       `json:"name"`
+	NameLabel       string       `json:"name_label"`
 	Price           string       `json:"price"`
 	Time            float64      `json:"time"`
 	TypesOfMovement string       `json:"types_of_movement"`
@@ -15,5 +16,6 @@ type Place struct {
 	WithChild       bool         `json:"with_child"`
 	WithPets        bool         `json:"with_pets"`
 	Description     string       `json:"description"`
+	DescriptionLabel string      `json:"description_label"`
 	Images          []PlaceImage `json:"images"`
 }

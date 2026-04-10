@@ -825,7 +825,7 @@
             <div class="form-group">
                 <label class="form-label">Бюджет: <span class="budget-value" id="budget-label">СРЕДНИЙ</span></label>
                 <div class="range-wrapper">
-                    <input type="range" id="budget" min="0" max="2" value="1">
+                    <input type="range" id="budget" name="budget" min="0" max="2" value="1">
                     <div class="range-labels">
                         <span>Экономный</span>
                         <span>Средний</span>
@@ -852,6 +852,12 @@
                     <label class="radio-option" style="flex:1; justify-content: center;"><input type="radio" name="pets" value="yes"><span>Да</span></label>
                     <label class="radio-option" style="flex:1; justify-content: center;"><input type="radio" name="pets" value="no" checked><span>Нет</span></label>
                 </div>
+            </div>
+
+            <!-- 7. Пожелания -->
+            <div class="form-group">
+                <label class="form-label">Ваши пожелания:</label>
+                <textarea class="form-input" name="preferences" placeholder="Опишите, какой маршрут вы хотели бы (например: 'Хочу посетить музеи и попробовать местную кухню', 'Интересует природа и пешие прогулки')" rows="3"></textarea>
             </div>
 
             <button type="submit" class="btn-submit">Подобрать маршрут</button>

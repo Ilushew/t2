@@ -86,6 +86,9 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 	// Показать следующий маршрут
 	r.GET("/next-route", criteriaHandler.HandleNextRoute)
 
+	// Показать маршруты заново (сброс счётчика)
+	r.POST("/restart", criteriaHandler.HandleRestartRoutes)
+
 	// Заявка на маршрут
 	r.POST("/applications", applicationHandler.SubmitApplication)
 
