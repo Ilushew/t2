@@ -15,11 +15,13 @@ import (
 )
 
 type Deps struct {
-	Pool        *pgxpool.Pool
-	UserRepo    *repository.UserRepository
-	PlaceRepo   *repository.PlaceRepository
-	EmailSvc    *services.EmailService
-	CodeService *services.CodeService
+	Pool          *pgxpool.Pool
+	UserRepo      *repository.UserRepository
+	PlaceRepo     *repository.PlaceRepository
+	ImageRepo     *repository.PlaceImageRepository
+	CommentRepo   *repository.PlaceCommentRepository
+	EmailSvc      *services.EmailService
+	CodeService   *services.CodeService
 }
 
 func setupRouter(deps Deps) *gin.Engine {
@@ -60,6 +62,8 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 	profileHandler := handlers.NewProfileHandler(deps.UserRepo)
 	adminHandler := handlers.NewAdminHandler(deps.UserRepo, deps.PlaceRepo)
 	applicationHandler := handlers.NewApplicationHandler(deps.EmailSvc)
+	commentHandler := handlers.NewPlaceCommentHandler(deps.CommentRepo, deps.PlaceRepo)
+	imageHandler := handlers.NewPlaceImageHandler(deps.ImageRepo, deps.PlaceRepo, "static/images/places")
 
 	// маршруты для админки
 	adminGroup := r.Group("/admin", middleware.RequireAdmin(deps.UserRepo))
@@ -81,6 +85,14 @@ func setupHandlers(r *gin.Engine, deps Deps) {
 
 	// Заявка на маршрут
 	r.POST("/applications", applicationHandler.SubmitApplication)
+
+	// Комментарии к маршрутам (HTMX)
+	r.GET("/places/:id/comments", commentHandler.GetComments)
+	r.POST("/places/:id/comments", commentHandler.CreateComment)
+
+	// Картинки маршрутов
+	r.POST("/places/:id/images", imageHandler.UploadImage)
+	r.DELETE("/places/:id/images/:image_id", imageHandler.DeleteImage)
 
 	r.GET("/profile", profileHandler.ShowProfilePage)
 
