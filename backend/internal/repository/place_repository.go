@@ -11,18 +11,20 @@ import (
 )
 
 type PlaceRepository struct {
-	pool *pgxpool.Pool
-	psq  sq.StatementBuilderType
+	pool     *pgxpool.Pool
+	psq      sq.StatementBuilderType
+	imageRepo *PlaceImageRepository
 }
 
-func NewPlaceRepository(pool *pgxpool.Pool) *PlaceRepository {
+func NewPlaceRepository(pool *pgxpool.Pool, imageRepo *PlaceImageRepository) *PlaceRepository {
 	return &PlaceRepository{
-		pool: pool,
-		psq:  sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		pool:     pool,
+		psq:      sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		imageRepo: imageRepo,
 	}
 }
 
-// GetByIDs возвращает места по списку ID в том же порядке
+// GetByIDs возвращает места по списку ID в том же порядке + подгружает картинки
 func (r *PlaceRepository) GetByIDs(ctx context.Context, ids []int) ([]models.Place, error) {
 	if len(ids) == 0 {
 		return nil, nil
@@ -46,6 +48,16 @@ func (r *PlaceRepository) GetByIDs(ctx context.Context, ids []int) ([]models.Pla
 	places, err := scanPlaces(rows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan places: %w", err)
+	}
+
+	// Подгружаем картинки если есть репозиторий
+	if r.imageRepo != nil && len(places) > 0 {
+		imagesMap, err := r.imageRepo.GetByPlaceIDs(ctx, ids)
+		if err == nil {
+			for i := range places {
+				places[i].Images = imagesMap[places[i].ID]
+			}
+		}
 	}
 
 	return places, nil
@@ -73,6 +85,20 @@ func (r *PlaceRepository) GetAll(ctx context.Context) ([]models.Place, error) {
 	places, err := scanPlaces(rows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan places: %w", err)
+	}
+
+	// Подгружаем картинки
+	if r.imageRepo != nil && len(places) > 0 {
+		ids := make([]int, len(places))
+		for i, p := range places {
+			ids[i] = p.ID
+		}
+		imagesMap, err := r.imageRepo.GetByPlaceIDs(ctx, ids)
+		if err == nil {
+			for i := range places {
+				places[i].Images = imagesMap[places[i].ID]
+			}
+		}
 	}
 
 	return places, nil

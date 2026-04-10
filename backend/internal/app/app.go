@@ -23,6 +23,7 @@ type App struct {
 	redisClient *redis.Client
 	userRepo    *repository.UserRepository
 	placeRepo   *repository.PlaceRepository
+	imageRepo   *repository.PlaceImageRepository
 	commentRepo *repository.PlaceCommentRepository
 	emailSvc    *services.EmailService
 	codeService *services.CodeService
@@ -82,7 +83,8 @@ func New() (*App, error) {
 
 	// репозитории
 	app.userRepo = repository.NewUserRepository(pool)
-	app.placeRepo = repository.NewPlaceRepository(pool)
+	app.imageRepo = repository.NewPlaceImageRepository(pool)
+	app.placeRepo = repository.NewPlaceRepository(pool, app.imageRepo)
 	app.commentRepo = repository.NewPlaceCommentRepository(pool)
 
 	// роутер
@@ -90,7 +92,9 @@ func New() (*App, error) {
 		Pool:        app.pool,
 		UserRepo:    app.userRepo,
 		PlaceRepo:   app.placeRepo,
+		ImageRepo:   app.imageRepo,
 		CommentRepo: app.commentRepo,
+		EmailSvc:    app.emailSvc,
 		CodeService: app.codeService,
 	}
 
